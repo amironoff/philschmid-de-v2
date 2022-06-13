@@ -3,8 +3,11 @@ import Tag from './Tag'
 import formatDate from '@/lib/utils/formatDate'
 
 const Card = ({ slug, date, title, summary, tags }) => (
-  <li key={slug} className="py-4">
-    <article className="block h-full w-full space-y-2 rounded-md bg-gray-50  bg-white p-4 text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-900 dark:bg-gray-800 dark:text-gray-100">
+  <li
+    key={slug}
+    className="rounded-xl  border border-gray-100 bg-white p-4 py-4 text-gray-900  shadow-sm transition-shadow hover:shadow-lg focus:border-primary-500 focus:ring-primary-500 dark:border-gray-900 dark:bg-gray-800 dark:text-gray-100"
+  >
+    <article className="block h-full w-full space-y-2">
       <dl>
         <dt className="sr-only">Published on</dt>
         <dd className="text-base font-medium leading-6 text-gray-500 dark:text-gray-400">
