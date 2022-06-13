@@ -26,15 +26,16 @@ module.exports = {
       },
       fontFamily: {
         sans: ['InterVariable', ...defaultTheme.fontFamily.sans],
+        serif: ['CHARTER'], //, ...defaultTheme.fontFamily.serif],
       },
       colors: {
-        primary: colors.teal,
+        primary: colors.blue,
         gray: colors.neutral,
       },
       typography: (theme) => ({
         DEFAULT: {
           css: {
-            color: theme('colors.gray.700'),
+            color: theme('colors.black'),
             a: {
               color: theme('colors.primary.500'),
               '&:hover': {
@@ -45,25 +46,26 @@ module.exports = {
             h1: {
               fontWeight: '700',
               letterSpacing: theme('letterSpacing.tight'),
-              color: theme('colors.gray.900'),
+              color: theme('colors.black'),
             },
             h2: {
               fontWeight: '700',
               letterSpacing: theme('letterSpacing.tight'),
-              color: theme('colors.gray.900'),
+              color: theme('colors.black'),
             },
             h3: {
               fontWeight: '600',
-              color: theme('colors.gray.900'),
+              color: theme('colors.black'),
             },
             'h4,h5,h6': {
-              color: theme('colors.gray.900'),
+              color: theme('colors.black'),
             },
             pre: {
-              backgroundColor: theme('colors.gray.800'),
+              backgroundColor: '#161b22',
+              fontSize: theme('fontSize.sm'),
             },
             code: {
-              color: theme('colors.pink.500'),
+              color: theme('colors.orange.500'),
               backgroundColor: theme('colors.gray.100'),
               paddingLeft: '4px',
               paddingRight: '4px',
@@ -88,12 +90,12 @@ module.exports = {
             hr: { borderColor: theme('colors.gray.200') },
             'ol li::marker': {
               fontWeight: '600',
-              color: theme('colors.gray.500'),
+              color: theme('colors.black'),
             },
             'ul li::marker': {
-              backgroundColor: theme('colors.gray.500'),
+              backgroundColor: theme('colors.black'),
             },
-            strong: { color: theme('colors.gray.600') },
+            strong: { color: theme('colors.primary.900') },
             blockquote: {
               color: theme('colors.gray.900'),
               borderLeftColor: theme('colors.gray.200'),

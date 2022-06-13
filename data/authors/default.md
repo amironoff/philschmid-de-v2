@@ -40,10 +40,11 @@ I created this blog to share my knowledge and connect with people. Feel free to 
 
 I believe that one should not have a fixed technology stack, but should always respond to the needs and problems of the customer. Below is just an excerpt and my favorite technologies in machine learning, cloud and non-ML frameworks.
 
-🤖 Machine Learning
+**🤖 Machine Learning**  
 Huggingface Transformers, PyTorch, Scikit-Learn, TensorFlow/Keras, Weights & Bias, Optuna
 
-☁️ Cloud
+**☁️ Cloud**  
 AWS, GCP, Azure, Kubernetes, Kubeflow, Docker, Terraform, Github Actions, CDK, Serverless Framework, Amazon SageMaker
-🏗️ Non-ML Frameworks
+
+**🏗️ Non-ML Frameworks**  
 Rust, React, Svelte, GraphQL, Next.js, TailwindCSS

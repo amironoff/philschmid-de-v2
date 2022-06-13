@@ -1,6 +1,7 @@
 import SocialIcon from '@/components/social-icons'
 import Image from '@/components/Image'
 import { PageSEO } from '@/components/SEO'
+import Tag from '@/components/Tag'
 
 export default function AuthorLayout({ children, frontMatter }) {
   const {
@@ -25,11 +26,15 @@ export default function AuthorLayout({ children, frontMatter }) {
           <h1 className="text-3xl font-extrabold leading-9 tracking-tight text-gray-900 dark:text-gray-100 sm:text-4xl sm:leading-10 md:text-6xl md:leading-14">
             {name}
           </h1>
-          {tags.map((tag) => (
-            <span className="text-primary text-lg md:text-2xl" key={tag}>
-              #{tag}{' '}
-            </span>
-          ))}
+          {tags && (
+            <div className="">
+              <div className="flex flex-wrap">
+                {tags.map((tag) => (
+                  <Tag key={tag} text={tag} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <div className="items-start space-y-2 xl:grid xl:grid-cols-3 xl:gap-x-8 xl:space-y-0">
           <div className="flex flex-col items-center pt-8">
@@ -38,7 +43,7 @@ export default function AuthorLayout({ children, frontMatter }) {
               alt="avatar"
               width="512px"
               height="512px"
-              className="h-56 w-56 rounded-full"
+              className="h-48 w-48 rounded-full"
             />
             <h3 className="pt-4 pb-2 text-2xl font-bold leading-8 tracking-tight">{name}</h3>
             <div className="text-gray-500 dark:text-gray-400">{location}</div>
