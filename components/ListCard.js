@@ -30,7 +30,7 @@ const Card = ({ slug, date, title, summary, tags }) => (
             ))}
           </div>
         </div>
-        <div className="prose max-w-none text-sm text-gray-500 dark:prose-dark dark:text-gray-400">
+        <div className="prose hidden max-w-none text-sm text-gray-500 dark:prose-dark dark:text-gray-400 md:block">
           {summary}
         </div>
       </div>

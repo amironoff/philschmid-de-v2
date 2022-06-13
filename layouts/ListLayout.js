@@ -48,7 +48,7 @@ export default function ListLayout({ posts, title, initialDisplayPosts = [], pag
             </svg>
           </div>
         </div>
-        <ul className="grid grid-cols-2 gap-8">
+        <ul className="grid gap-4 xl:grid-cols-2 xl:gap-8">
           {!filteredBlogPosts.length && 'No posts found.'}
           {displayPosts.map((frontMatter) => (
             <ListCard key={frontMatter.slug} {...frontMatter} />
