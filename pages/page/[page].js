@@ -45,12 +45,7 @@ export default function PostPage({ pageNumber, posts, initialDisplayPosts, pagin
   return (
     <>
       <PageSEO title={siteMetadata.title} description={siteMetadata.description} />
-      <ListLayout
-        posts={posts}
-        initialDisplayPosts={initialDisplayPosts}
-        pagination={pagination}
-        title={`Page ${pageNumber}`}
-      />
+      <ListLayout posts={posts} initialDisplayPosts={initialDisplayPosts} pagination={pagination} />
     </>
   )
 }

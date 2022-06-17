@@ -247,6 +247,15 @@ Using the template? Support this effort by giving a star on GitHub, sharing your
 
 ## Todos
 
+- [ ] fix font
+- [ ] convert blogs
+- [ ] deploy
+- [ ] ask briteny for SEO
+- [ ] add projects
+- [ ] rework newsletter section
+- [ ] add newsletter stuff
+- [ ] add google analytics
+
 ## Important resources
 
 - [ ] open graph protocal opengraph.xyz

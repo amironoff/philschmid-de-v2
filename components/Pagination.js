@@ -6,28 +6,47 @@ export default function Pagination({ totalPages, currentPage }) {
 
   return (
     <div className="space-y-2 pt-6 pb-8 md:space-y-5">
-      <nav className="flex justify-between">
-        {!prevPage && (
-          <button rel="previous" className="cursor-auto disabled:opacity-50" disabled={!prevPage}>
-            Previous
-          </button>
-        )}
+      <nav className="flex space-x-2">
         {prevPage && (
           <Link href={currentPage - 1 === 1 ? `/` : `/page/${currentPage - 1}`}>
-            <button rel="previous">Previous</button>
+            <button
+              rel="previous"
+              className="flex hover:text-primary-500 dark:hover:text-primary-400"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              Previous
+            </button>
           </Link>
         )}
+
         <span>
           {currentPage} of {totalPages}
         </span>
-        {!nextPage && (
-          <button rel="next" className="cursor-auto disabled:opacity-50" disabled={!nextPage}>
-            Next
-          </button>
-        )}
+
         {nextPage && (
           <Link href={`/page/${currentPage + 1}`}>
-            <button rel="next">Next</button>
+            <button rel="next" className="flex hover:text-primary-500 dark:hover:text-primary-400">
+              Next
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </Link>
         )}
       </nav>

@@ -19,7 +19,7 @@ const Card = ({ slug, date, title, summary, tags }) => (
           <h3 className="text-2xl font-semibold leading-8 tracking-tight ">
             <Link
               href={`/${slug}`}
-              className="text-gray-900 hover:text-primary-600 dark:text-gray-100 dark:hover:text-primary-400"
+              className="text-gray-900 duration-100 hover:text-primary-500 dark:text-gray-100 dark:hover:text-primary-400 "
             >
               {title}
             </Link>
