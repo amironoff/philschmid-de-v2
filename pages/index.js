@@ -13,7 +13,7 @@ import Pagination from '@/components/Pagination'
 
 import NewsletterForm from '@/components/NewsletterForm'
 
-export const POSTS_PER_PAGE = 4
+export const POSTS_PER_PAGE = 10
 
 export async function getStaticProps() {
   const posts = await getAllFilesFrontMatter('blog')
@@ -27,8 +27,6 @@ export async function getStaticProps() {
   const topTags = Object.keys(tags)
     .sort((a, b) => tags[b] - tags[a])
     .slice(0, 5)
-  console.log(topTags)
-
   return { props: { initialDisplayPosts, posts, pagination, tags: topTags } }
 }
 
@@ -94,7 +92,7 @@ export default function Home({ posts, initialDisplayPosts, pagination, tags }) {
           />
         </div>
       </div>
-      <ul className="mt-2 grid auto-rows-max gap-4 xl:grid-cols-2 xl:gap-8	">
+      <ul className="mt-2 grid auto-rows-max gap-4 xl:grid-cols-1 xl:gap-8	">
         {!filteredBlogPosts.length && 'No posts found.'}
         {displayPosts.map((frontMatter) => (
           <ListCard key={frontMatter.slug} {...frontMatter} />

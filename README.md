@@ -247,14 +247,16 @@ Using the template? Support this effort by giving a star on GitHub, sharing your
 
 ## Todos
 
-- [ ] fix font
+- [x] fix font
 - [ ] convert blogs
 - [ ] deploy
+- [ ] logo
 - [ ] ask briteny for SEO
 - [ ] add projects
-- [ ] rework newsletter section
-- [ ] add newsletter stuff
-- [ ] add google analytics
+- [x] rework newsletter section
+- [x] add newsletter stuff
+- [x] add google analytics
+- [ ] analytics
 
 ## Important resources
 

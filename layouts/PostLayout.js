@@ -15,7 +15,6 @@ const discussUrl = (slug) =>
 const postDateTemplate = { year: 'numeric', month: 'long', day: 'numeric' }
 
 export default function PostLayout({ frontMatter, authorDetails, next, prev, children }) {
-  console.log(frontMatter)
   const { slug, fileName, date, title, images, tags, readingTime } = frontMatter
 
   return (
@@ -34,7 +33,7 @@ export default function PostLayout({ frontMatter, authorDetails, next, prev, chi
                 <PageTitle>{title}</PageTitle>
               </div>
               {tags && (
-                <div className="">
+                <div>
                   <div className="flex flex-wrap">
                     {tags.map((tag) => (
                       <Tag key={tag} text={tag} />

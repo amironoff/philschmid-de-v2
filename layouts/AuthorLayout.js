@@ -27,7 +27,7 @@ export default function AuthorLayout({ children, frontMatter }) {
             {name}
           </h1>
           {tags && (
-            <div className="">
+            <div>
               <div className="flex flex-wrap">
                 {tags.map((tag) => (
                   <Tag key={tag} text={tag} />

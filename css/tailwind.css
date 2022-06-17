@@ -4,7 +4,7 @@
 
 @font-face {
   font-family: 'CHARTER';
-  src: url('/public/static/fonts/charter_regular-webfont.woff') format('woff');
+  src: local(''), url('/fonts/charter_regular-webfont.woff') format('woff');
 }
 
 .task-list-item::before {
