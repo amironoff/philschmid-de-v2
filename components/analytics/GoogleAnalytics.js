@@ -9,47 +9,58 @@ const GAScript = () => {
         strategy="lazyOnload"
         src={`https://www.googletagmanager.com/gtag/js?id=${siteMetadata.analytics.googleAnalyticsId}`}
       />
-      <Script src="https://cdn.jsdelivr.net/npm/uuid@latest/dist/umd/uuidv4.min.js" />
+
       <Script strategy="lazyOnload" id="ga-script">
         {`
-          // https://developers.google.com/tag-manager/devguide
-          window.dataLayer = window.dataLayer || [];
-          function gtag() {
-            dataLayer.push(arguments);
-          }
-          gtag('js', new Date());
-
-          // defines window.localstorage key
-          const GA_LOCAL_STORAGE_KEY = 'ga:clientId';
-
-          // checks if localstorage is available
-          if (window.localStorage) {
-            // checks if user was already connected and loads client_id from localstorage
-            if (localStorage.getItem(GA_LOCAL_STORAGE_KEY)) {
-              // creates new tracker with same client_id as the last time the user visited
-              gtag('js', new Date());
-              gtag('config', 'UA-154999168-1}', {
-                send_page_view: true,
-                client_storage: 'none',
-                client_id: localStorage.getItem(GA_LOCAL_STORAGE_KEY),
-              });
-            } else {
-              // creates client_id and saves it in localStorage -> currently random number better would be a uuid
-              window.localStorage.setItem(GA_LOCAL_STORAGE_KEY, uuidv4());
-              // creates new tracker with the new client_id
-              gtag('js', new Date());
-              gtag('config', 'UA-154999168-1', {
-                send_page_view: true,
-                client_storage: 'none',
-                client_id: localStorage.getItem(GA_LOCAL_STORAGE_KEY),
-              });
-            }
-          }
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${siteMetadata.analytics.googleAnalyticsId}', {
+              page_path: window.location.pathname,
+            });
         `}
       </Script>
     </>
   )
 }
+
+// <Script strategy="lazyOnload" id="ga-script">
+//         {`
+//           // https://developers.google.com/tag-manager/devguide
+//           window.dataLayer = window.dataLayer || [];
+//           function gtag() {
+//             dataLayer.push(arguments);
+//           }
+//           gtag('js', new Date());
+
+//           // defines window.localstorage key
+//           const GA_LOCAL_STORAGE_KEY = 'ga:clientId';
+
+//           // checks if localstorage is available
+//           if (window.localStorage) {
+//             // checks if user was already connected and loads client_id from localstorage
+//             if (localStorage.getItem(GA_LOCAL_STORAGE_KEY)) {
+//               // creates new tracker with same client_id as the last time the user visited
+//               gtag('js', new Date());
+//               gtag('config', '${siteMetadata.analytics.googleAnalyticsId}', {
+//                 send_page_view: true,
+//                 client_storage: 'none',
+//                 client_id: localStorage.getItem(GA_LOCAL_STORAGE_KEY),
+//               });
+//             } else {
+//               // creates client_id and saves it in localStorage -> currently random number better would be a uuid
+//               window.localStorage.setItem(GA_LOCAL_STORAGE_KEY, uuidv4());
+//               // creates new tracker with the new client_id
+//               gtag('js', new Date());
+//               gtag('config', '${siteMetadata.analytics.googleAnalyticsId}', {
+//                 send_page_view: true,
+//                 client_storage: 'none',
+//                 client_id: localStorage.getItem(GA_LOCAL_STORAGE_KEY),
+//               });
+//             }
+//           }
+//         `}
+//       </Script>
 
 export default GAScript
 
