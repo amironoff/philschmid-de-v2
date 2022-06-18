@@ -59,12 +59,14 @@ export default function PostLayout({ frontMatter, authorDetails, next, prev, chi
                   <dd className="text-base leading-6 text-gray-500 dark:text-gray-400">
                     {readingTime.text}
                   </dd>
-                  <Link
-                    className="pt-6 pb-6 text-primary-500 hover:text-primary-600 dark:hover:text-primary-400"
-                    href={frontMatter.repository}
-                  >
-                    {'View on Code'}
-                  </Link>
+                  {frontMatter.repository && (
+                    <Link
+                      className="pt-6 pb-6 text-primary-500 hover:text-primary-600 dark:hover:text-primary-400"
+                      href={frontMatter.repository}
+                    >
+                      {'View Code'}
+                    </Link>
+                  )}
                 </div>
               </dl>
             </dl>
