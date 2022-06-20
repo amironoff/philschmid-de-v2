@@ -259,6 +259,7 @@ Using the template? Support this effort by giving a star on GitHub, sharing your
 - [ ] analytics
 - [ ] adjust thumbnail
 - [ ] adjust description and stuff for seo
+- [ ] social icons
 
 ## Important resources
 
