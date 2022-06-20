@@ -257,6 +257,8 @@ Using the template? Support this effort by giving a star on GitHub, sharing your
 - [x] add newsletter stuff
 - [x] add google analytics
 - [ ] analytics
+- [ ] adjust thumbnail
+- [ ] adjust description and stuff for seo
 
 ## Important resources
 
