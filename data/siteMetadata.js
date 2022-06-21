@@ -2,20 +2,18 @@ const siteMetadata = {
   title: 'philschmid blog',
   author: 'Philipp Schmid',
   headerTitle: ['philschmid', 'blog'],
-  description: 'A blog created with Next.js and Tailwind.css',
+  description:
+    'Hello, my name is Philipp. This is my blog. I write about machine learning and cloud with an focus on AWS. You will find tutorials and explanations about AWS, NLP, Transformers and more',
   language: 'en-us',
   theme: 'system', // system, dark or light
-  siteUrl: 'https://tailwind-nextjs-starter-blog.vercel.app',
-  siteRepo: 'https://github.com/timlrx/tailwind-nextjs-starter-blog',
+  siteUrl: 'https://www.phildschmid.de',
+  siteRepo: 'hhttps://github.com/philschmid/philschmid-de-v2',
   siteLogo: '/static/images/logo.png',
-  image: '/static/images/avatar.png',
   socialBanner: '/static/images/twitter-card.png',
-  email: 'address@yoursite.com',
-  github: 'https://github.com',
-  twitter: 'https://twitter.com/Twitter',
-  facebook: 'https://facebook.com',
-  youtube: 'https://youtube.com',
-  linkedin: 'https://www.linkedin.com',
+  email: 'schmidphilipp1995@gmail.com',
+  github: 'https://github.com/philschmid',
+  twitter: 'https://twitter.com/_philschmid',
+  linkedin: 'https://www.linkedin.com/in/philipp-schmid-a6a2bb196/',
   locale: 'en-US',
   analytics: {
     // If you want to use an analytics provider you have to add it to the

@@ -16,11 +16,26 @@ const LayoutWrapper = ({ children }) => {
             <Link href="/" aria-label="philschmid blog">
               <div className="flex items-center justify-between">
                 <div className="mr-3">
-                  <Logo />
+                  <svg
+                    className="fill-black dark:fill-gray-800"
+                    width="50"
+                    height="50"
+                    viewBox="0 0 50 50"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle cx="25" cy="25" r="25" />
+                    <path
+                      d="M21.9163 13.5879L34.5459 35.4629H9.2868L21.9163 13.5879Z"
+                      fill="white"
+                    />
+                    <path
+                      d="M26.7242 13.1627L42.7171 13.1627L34.7206 27.013L26.7242 13.1627Z"
+                      fill="white"
+                    />
+                  </svg>
                 </div>
-                <div className="text-2xl font-semibold sm:block">
-                  philschmid <span className="text-gray-500 dark:text-gray-200"> blog</span>
-                </div>
+                <div className="text-2xl font-semibold sm:block">philschmid</div>
               </div>
             </Link>
           </div>
