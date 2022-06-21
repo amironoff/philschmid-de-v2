@@ -37,9 +37,9 @@ module.exports = {
           css: {
             color: theme('colors.black'),
             a: {
-              color: theme('colors.primary.500'),
+              color: theme('colors.primary.600'),
               '&:hover': {
-                color: `${theme('colors.primary.600')} !important`,
+                color: `${theme('colors.primary.400')} !important`,
               },
               code: { color: theme('colors.primary.400') },
             },
@@ -67,10 +67,10 @@ module.exports = {
             code: {
               color: theme('colors.orange.500'),
               backgroundColor: theme('colors.gray.100'),
-              paddingLeft: '4px',
-              paddingRight: '4px',
-              paddingTop: '2px',
-              paddingBottom: '2px',
+              paddingLeft: '2px',
+              paddingRight: '2px',
+              paddingTop: '1px',
+              paddingBottom: '1px',
               borderRadius: '0.25rem',
             },
             'code::before': {

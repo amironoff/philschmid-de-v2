@@ -23,6 +23,9 @@ const siteMetadata = require('../data/siteMetadata')
             ${pages
               .map((page) => {
                 // Exclude drafts from the sitemap
+                if (page === 'pages/[...slug].js') {
+                  return
+                }
                 if (page.search('.md') >= 1 && fs.existsSync(page)) {
                   const source = fs.readFileSync(page, 'utf8')
                   const fm = matter(source)
@@ -35,7 +38,7 @@ const siteMetadata = require('../data/siteMetadata')
                 }
                 const path = page
                   .replace('pages/', '/')
-                  .replace('data/blog', '/blog')
+                  .replace('data/blog', '')
                   .replace('public/', '/')
                   .replace('.js', '')
                   .replace('.tsx', '')

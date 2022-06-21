@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Sitemap: https://www.philschmid.de/sitemap.xml
+Host: https://www.philschmid.de

@@ -6,8 +6,8 @@ const siteMetadata = {
     'Hello, my name is Philipp. I write about machine learning and cloud with. You will find tutorials and explanations about AWS, NLP, Transformers and more',
   language: 'en-us',
   theme: 'system', // system, dark or light
-  // siteUrl: 'https://www.phildschmid.de',
-  siteUrl: 'https://philschmid-de-philschmid.vercel.app',
+  siteUrl: 'https://www.philschmid.de',
+  // siteUrl: 'https://philschmid-de-philschmid.vercel.app',
   siteRepo: 'hhttps://github.com/philschmid/philschmid-de-v2',
   siteLogo: '/static/images/logo.png',
   socialBanner: '/static/images/twitter-card.png',
