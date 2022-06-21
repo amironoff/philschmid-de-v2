@@ -258,8 +258,8 @@ Using the template? Support this effort by giving a star on GitHub, sharing your
 - [x] add google analytics
 - [ ] analytics
 - [ ] adjust thumbnail
-- [ ] adjust description and stuff for seo
-- [ ] social icons
+- [x] adjust description and stuff for seo
+- [x] social icons
 
 ## Important resources
 
