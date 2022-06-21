@@ -248,11 +248,11 @@ Using the template? Support this effort by giving a star on GitHub, sharing your
 ## Todos
 
 - [x] fix font
-- [ ] convert blogs
-- [ ] deploy
+- [x] convert blogs
+- [x] deploy
 - [ ] logo
 - [ ] ask briteny for SEO
-- [ ] add projects
+- [x] add projects
 - [x] rework newsletter section
 - [x] add newsletter stuff
 - [x] add google analytics
