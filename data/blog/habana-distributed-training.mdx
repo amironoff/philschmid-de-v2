@@ -202,8 +202,8 @@ Normally you would use the [Trainer](https://huggingface.co/docs/transformers/v4
 +from optimum.habana import GaudiTrainer, GaudiTrainingArguments
 
 # define the training arguments
--training_args = GaudiTrainingArguments(
-+training_args = TrainingArguments(
+-training_args = TrainingArguments(
++training_args = GaudiTrainingArguments(
 +  use_habana=True,
 +  use_lazy_mode=True,
 +  gaudi_config_name=path_to_gaudi_config,
