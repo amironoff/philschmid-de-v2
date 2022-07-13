@@ -1,0 +1,263 @@
+---
+title: Optimizing Transformers for GPUs with Optimum
+date: '2022-07-13'
+lastmod: '2022-07-13'
+tags:
+  - BERT
+  - OnnxRuntime
+  - HuggingFace
+  - Optimization
+draft: false
+summary: Learn how to optimize Hugging Face Transformers models for NVIDIA GPUs using Optimum. You will learn how to optimize a DistilBERT for ONNX Runtime
+images: ['/static/blog/optimizing-transformers-with-optimum-gpu/performance.png']
+repository: https://github.com/philschmid/optimum-transformers-optimizations-gpu/blob/master/notebook.ipynb
+---
+
+In this session, you will learn how to optimize Hugging Face Transformers models for GPUs using Optimum. The session will show you how to convert you weights to fp16 weights and optimize a DistilBERT model using [Hugging Face Optimum](https://huggingface.co/docs/optimum/index) and [ONNX Runtime](https://onnxruntime.ai/). Hugging Face Optimum is an extension of 🤗 Transformers, providing a set of performance optimization tools enabling maximum efficiency to train and run models on targeted hardware. We are going to optimize a DistilBERT model for Question Answering, which was fine-tuned on the SQuAD dataset to decrease the latency from 7ms to 3ms for a sequence lenght of 128.
+
+_Note: int8 quantization is currently only supported for CPUs. We plan to add support for in the near future using TensorRT._
+
+By the end of this session, you will know how GPU optimization with Hugging Face Optimum can result in significant increase in model latency and througput while keeping 100% of the full-precision model.
+
+You will learn how to:
+
+1. Setup Development Environment
+2. Convert a Hugging Face `Transformers` model to ONNX for inference
+3. Optimize model for GPU using `ORTOptimizer`
+4. Evaluate the performance and speed
+
+Let's get started! 🚀
+
+_This tutorial was created and run on an g4dn.xlarge AWS EC2 Instance including a NVIDIA T4._
+
+---
+
+## 1. Setup Development Environment
+
+Our first step is to install Optimum, along with Evaluate and some other libraries. Running the following cell will install all the required packages for us including Transformers, PyTorch, and ONNX Runtime utilities:
+
+_Note: You need a machine with a GPU and CUDA installed. You can check this by running `nvidia-smi` in your terminal. If you have a correct environment you should statistics abour your GPU._
+
+```python
+%pip install "optimum[onnxruntime-gpu]==1.3.0" --upgrade
+%pip install -i https://test.pypi.org/simple/ "ort-nightly-gpu==1.12.0.dev20220711001" --upgrade # needed since 1.11.1 has a bug for gpu optimizations
+```
+
+Before we start. Lets make sure we have the `CUDAExecutionProvider` for ONNX Runtime available.
+
+```python
+from onnxruntime import get_available_providers, get_device
+import onnxruntime
+
+# check available providers
+assert 'CUDAExecutionProvider' in get_available_providers(), "ONNX Runtime GPU provider not found. Make sure onnxruntime-gpu is installed and onnxruntime is uninstalled."
+assert "GPU" == get_device()
+
+# asser version due to bug in 1.11.1
+assert onnxruntime.__version__ > "1.11.1", "you need a newer version of ONNX Runtime"
+```
+
+> If you want to run inference on a CPU, you can install 🤗 Optimum with `pip install optimum[onnxruntime]`.
+
+## 2. Convert a Hugging Face `Transformers` model to ONNX for inference
+
+Before we can start optimizing our model we need to convert our vanilla `transformers` model to the `onnx` format. To do this we will use the new [ORTModelForQuestionAnswering](https://huggingface.co/docs/optimum/main/en/onnxruntime/modeling_ort#optimum.onnxruntime.ORTModelForQuestionAnswering) class calling the `from_pretrained()` method with the `from_transformers` attribute. The model we are using is the [distilbert-base-cased-distilled-squad](https://huggingface.co/distilbert-base-cased-distilled-squad) a fine-tuned DistilBERT-based model on the SQuAD dataset achieving an F1 score of `87.1` and as the feature (task) `question-answering`.
+
+```python
+from optimum.onnxruntime import ORTModelForQuestionAnswering
+from transformers import AutoTokenizer
+from pathlib import Path
+
+
+model_id="distilbert-base-cased-distilled-squad"
+onnx_path = Path("onnx")
+
+# load vanilla transformers and convert to onnx
+model = ORTModelForQuestionAnswering.from_pretrained(model_id, from_transformers=True)
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+
+# save onnx checkpoint and tokenizer
+model.save_pretrained(onnx_path)
+tokenizer.save_pretrained(onnx_path)
+```
+
+Before we jump into the optimization of the model lets first evaluate the current performance of the model. Therefore we can use `pipeline()` function from 🤗 Transformers. Meaning we will measure the end-to-end latency including the pre- and post-processing features.
+
+```python
+context="Hello, my name is Philipp and I live in Nuremberg, Germany. Currently I am working as a Technical Lead at Hugging Face to democratize artificial intelligence through open source and open science. In the past I designed and implemented cloud-native machine learning architectures for fin-tech and insurance companies. I found my passion for cloud concepts and machine learning 5 years ago. Since then I never stopped learning. Currently, I am focusing myself in the area NLP and how to leverage models like BERT, Roberta, T5, ViT, and GPT2 to generate business value."
+question="As what is Philipp working?"
+```
+
+After we prepared our payload we can create the inference `pipeline`.
+
+```python
+from transformers import pipeline
+
+vanilla_qa = pipeline("question-answering", model=model, tokenizer=tokenizer, device=0)
+
+print(f"pipeline is loaded on device {vanilla_qa.model.device}")
+print(vanilla_qa(question=question,context=context))
+#    pipeline is loaded on device cuda:0
+#    {'score': 0.6575328707695007, 'start': 88, 'end': 102, 'answer': 'Technical Lead'}
+```
+
+If you are seeing a `CreateExecutionProviderInstance` error you are not having a compatible `cuda` version installed. Check the [documentation](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html), which cuda version you need.
+
+If you want to learn more about exporting transformers model check-out [Convert Transformers to ONNX with Hugging Face Optimum](https://www.philschmid.de/convert-transformers-to-onnx) blog post
+
+## 3. Optimize model for GPU using `ORTOptimizer`
+
+The [ORTOptimizer](https://huggingface.co/docs/optimum/onnxruntime/optimization#optimum.onnxruntime.ORTOptimizer) allows you to apply ONNX Runtime optimization on our Transformers models. In addition to the `ORTOptimizer` Optimum offers a [OptimizationConfig](https://huggingface.co/docs/optimum/onnxruntime/configuration#optimum.onnxruntime.configuration.OptimizationConfig) a configuration class handling all the ONNX Runtime optimization parameters.
+There are several technique to optimize our model for GPUs including graph optimizations and converting our model weights from `fp32` to `fp16`.
+
+Graph optimizations are essentially graph-level transformations, ranging from small graph simplifications and node eliminations to more complex node fusions and layout optimizations.
+Examples of graph optimizations include:
+
+- **Constant folding**: evaluate constant expressions at compile time instead of runtime
+- **Redundant node elimination**: remove redundant nodes without changing graph structure
+- **Operator fusion**: merge one node (i.e. operator) into another so they can be executed together
+
+![operator fusion](/static/blog/optimizing-transformers-with-optimum-gpu/operator_fusion.png)
+
+If you want to learn more about graph optimization you take a look at the [ONNX Runtime documentation](https://onnxruntime.ai/docs/performance/graph-optimizations.html).
+
+To achieve best performance we will apply the following optimizations parameter in our `OptimizationConfig`:
+
+- `optimization_level=99`: to enable all the optimizations. _Note: Switching Hardware after optimization can lead to issues._
+- `optimize_for_gpu=True`: to enable GPU optimizations.
+- `fp16=True`: to convert model computation from `fp32` to `fp16`. _Note: Only for V100 and T4 or newer._
+
+```python
+from optimum.onnxruntime import ORTOptimizer
+from optimum.onnxruntime.configuration import OptimizationConfig
+
+# create ORTOptimizer and define optimization configuration
+optimizer = ORTOptimizer.from_pretrained(model_id, feature=model.pipeline_task)
+optimization_config = OptimizationConfig(optimization_level=99,
+                                         optimize_for_gpu=True,
+                                         fp16=True
+                                         )
+
+# apply the optimization configuration to the model
+optimizer.export(
+    onnx_model_path=onnx_path / "model.onnx",
+    onnx_optimized_model_output_path=onnx_path / "model-optimized.onnx",
+    optimization_config=optimization_config,
+)
+```
+
+To test performance we can use the ORTModelForSequenceClassification class again and provide an additional `file_name` parameter to load our optimized model. _(This also works for models available on the hub)._
+
+```python
+from transformers import pipeline
+
+# load optimized model
+model = ORTModelForQuestionAnswering.from_pretrained(onnx_path, file_name="model-optimized.onnx")
+
+# create optimized pipeline
+optimized_qa = pipeline("question-answering", model=model, tokenizer=tokenizer, device=0)
+print(optimized_qa(question=question,context=context))
+```
+
+## 4. Evaluate the performance and speed
+
+As the last step, we want to take a detailed look at the performance and accuracy of our model. Applying optimization techniques, like graph optimizations or mixed-precision not only impact performance (latency) those also might have an impact on the accuracy of the model. So accelerating your model comes with a trade-off.
+
+Let's evaluate our models. Our transformers model [distilbert-base-cased-distilled-squad](https://huggingface.co/distilbert-base-cased-distilled-squad) was fine-tuned on the SQuAD dataset.
+
+```python
+from transformers import pipeline
+
+trfs_qa = pipeline("question-answering", model=model_id, device=0)
+```
+
+```python
+from datasets import load_metric,load_dataset
+
+metric = load_metric("squad_v2")
+metric = load_metric("squad")
+eval_dataset = load_dataset("squad")["validation"]
+
+# creating a subset for faster evaluation
+# COMMENT IN to run evaluation on a subset of the dataset
+# eval_dataset = eval_dataset.select(range(1000))
+```
+
+We can now leverage the [map](https://huggingface.co/docs/datasets/v2.1.0/en/process#map) function of [datasets](https://huggingface.co/docs/datasets/index) to iterate over the validation set of `squad_v2` and run prediction for each data point. Therefore we write a `evaluate` helper method which uses our pipelines and applies some transformation to work with the [squad v2 metric.](https://huggingface.co/metrics/squad_v2)
+
+```python
+def evaluate(example):
+  default = vanilla_qa(question=example["question"], context=example["context"])
+  optimized = optimized_qa(question=example["question"], context=example["context"])
+  return {
+      'reference': {'id': example['id'], 'answers': example['answers']},
+      'default': {'id': example['id'],'prediction_text': default['answer']},
+      'optimized': {'id': example['id'],'prediction_text': optimized['answer']},
+      }
+
+result = eval_dataset.map(evaluate)
+
+default_acc = metric.compute(predictions=result["default"], references=result["reference"])
+optimized = metric.compute(predictions=result["optimized"], references=result["reference"])
+
+print(f"vanilla model: f1={default_acc['f1']}%")
+print(f"optimized model: f1={optimized['f1']}%")
+print(f"The optimized model achieves {round(optimized['f1']/default_acc['f1'],2)*100:.2f}% accuracy of the fp32 model")
+
+# vanilla model: f1=86.84859514665654%
+# optimized model: f1=86.8536859246896%
+# The optimized model achieves 100.00% accuracy of the fp32 model
+
+```
+
+Okay, now let's test the performance (latency) of our optimized model. We are going to use a payload with a sequence length of 128 for the benchmark. To keep it simple, we are going to use a python loop and calculate the avg,mean & p95 latency for our vanilla model and for the optimized model.
+
+```python
+from time import perf_counter
+import numpy as np
+
+context="Hello, my name is Philipp and I live in Nuremberg, Germany. Currently I am working as a Technical Lead at Hugging Face to democratize artificial intelligence through open source and open science. In the past I designed and implemented cloud-native machine learning architectures for fin-tech and insurance companies. I found my passion for cloud concepts and machine learning 5 years ago. Since then I never stopped learning. Currently, I am focusing myself in the area NLP and how to leverage models like BERT, Roberta, T5, ViT, and GPT2 to generate business value."
+question="As what is Philipp working?"
+
+def measure_latency(pipe):
+    latencies = []
+    # warm up
+    for _ in range(10):
+        _ = pipe(question=question,context=context)
+    # Timed run
+    for _ in range(300):
+        start_time = perf_counter()
+        _ =  pipe(question=question,context=context)
+        latency = perf_counter() - start_time
+        latencies.append(latency)
+    # Compute run statistics
+    time_avg_ms = 1000 * np.mean(latencies)
+    time_std_ms = 1000 * np.std(latencies)
+    time_p95_ms = 1000 * np.percentile(latencies,95)
+    return f"P95 latency (ms) - {time_p95_ms}; Average latency (ms) - {time_avg_ms:.2f} +\- {time_std_ms:.2f};", time_p95_ms
+
+vanilla_model=measure_latency(vanilla_qa)
+optimized_model=measure_latency(optimized_qa)
+
+print(f"Vanilla model: {vanilla_model[0]}")
+print(f"Optimized model: {optimized_model[0]}")
+print(f"Improvement through optimization: {round(vanilla_model[1]/optimized_model[1],2)}x")
+
+# Vanilla model: P95 latency (ms) - 7.784631400227273; Average latency (ms) - 6.87 +\- 1.20;
+# Optimized model: P95 latency (ms) - 3.392388850079442; Average latency (ms) - 3.32 +\- 0.03;
+# Improvement through optimization: 2.29x
+```
+
+We managed to accelerate our model latency from 7.8ms to 3.4ms or 2.3x while keeping 100.00% of the accuracy.
+
+![performance](/static/blog/optimizing-transformers-with-optimum-gpu/performance.png)
+
+## Conclusion
+
+We successfully optimized our vanilla Transformers model with Hugging Face Optimum and managed to accelerate our model latency from 7.8ms to 3.4ms or 2.3x while keeping 100.00% of the accuracy.
+
+But I have to say that this isn't a plug and play process you can transfer to any Transformers model, task or dataset.
+
+---
+
+Thanks for reading. If you have any questions, feel free to contact me, through [Github](https://github.com/huggingface/optimum), or on the [forum](https://discuss.huggingface.co/). You can also connect with me on [Twitter](https://twitter.com/_philschmid) or [LinkedIn](https://www.linkedin.com/in/philipp-schmid-a6a2bb196/).
