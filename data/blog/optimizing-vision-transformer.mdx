@@ -1,0 +1,228 @@
+---
+title: Accelerate Vision Transformer (ViT) with Quantization using Optimum
+date: '2022-07-19'
+lastmod: '2022-07-19'
+tags:
+  - ViT
+  - OnnxRuntime
+  - HuggingFace
+  - Optimization
+draft: false
+summary: Learn how to optimize Vision Transformer (ViT) using Hugging Face Optimum. You will learn how dynamically quantize a ViT model for ONNX Runtime.
+images: ['/static/blog/optimizing-vision-transformer/vit-performance']
+repository: https://github.com/philschmid/optimum-transformers-optimizations/blob/master/vision-transformers.ipynb
+---
+
+In this session, you will learn how to optimize Vision Transformers models using Optimum. The session will show you how to dynamically quantize and optimize a ViT model using [Hugging Face Optimum](https://huggingface.co/docs/optimum/index) and [ONNX Runtime](https://onnxruntime.ai/). Hugging Face Optimum is an extension of 🤗 Transformers, providing a set of performance optimization tools enabling maximum efficiency to train and run models on targeted hardware.
+
+_Note: dynamic quantization is currently only supported for CPUs, so we will not be utilizing GPUs / CUDA in this session._
+
+By the end of this session, you see how quantization and optimization with Hugging Face Optimum can result in significant increase in model latency while keeping almost 100% of the full-precision model. Furthermore, you’ll see how to easily apply some advanced quantization and optimization techniques shown here so that your models take much less of an accuracy hit than they would otherwise.
+
+You will learn how to:
+
+1. [Setup Development Environment](#1-setup-development-environment)
+2. [Convert a Hugging Face `Transformers` model to ONNX for inference](#2-convert-a-hugging-face-transformers-model-to-onnx-for-inference)
+3. [Apply dynamic quantization using `ORTQuantizer` from Optimum](#3-apply-dynamic-quantization-using-ortquantizer-from-optimum)
+4. [Test inference with the quantized model](#4-test-inference-with-the-quantized-model)
+5. [Evaluate the performance and speed](#5-evaluate-the-performance-and-speed)
+
+Let's get started! 🚀
+
+_This tutorial was created and run on an c6i.xlarge AWS EC2 Instance._
+
+---
+
+## Quick intro: Vision Transformer (ViT) by Google Brain
+
+The Vision Transformer (ViT) is basically BERT, but applied to images. It attains excellent results compared to state-of-the-art convolutional networks. In order to provide images to the model, each image is split into a sequence of fixed-size patches (typically of resolution 16x16 or 32x32), which are linearly embedded. One also adds a [CLS] token at the beginning of the sequence in order to classify images. Next, one adds absolute position embeddings and provides this sequence to the Transformer encoder.
+
+![vision-transformer-architecture](/static/blog/optimizing-vision-transformer/vision-transformer-architecture.webp)
+
+- Paper: https://arxiv.org/abs/2010.11929
+- Official repo (in JAX): https://github.com/google-research/vision_transformer
+
+## 1. Setup Development Environment
+
+Our first step is to install Optimum, along with Evaluate and some other libraries. Running the following cell will install all the required packages for us including Transformers, PyTorch, and ONNX Runtime utilities:
+
+```python
+!pip install "optimum[onnxruntime]==1.3.0"  sklearn mkl-include mkl datasets --upgrade
+!pip install git+https://github.com/huggingface/evaluate --upgrade # workaround until image-classification is added
+```
+
+> If you want to run inference on a GPU, you can install 🤗 Optimum with `pip install optimum[onnxruntime-gpu]`.
+
+## 2. Convert a Hugging Face `Transformers` model to ONNX for inference
+
+Before we can start qunatizing we need to convert our vanilla `transformers` model to the `onnx` format. To do this we will use the new [ORTModelForImageClassification](https://huggingface.co/docs/optimum/onnxruntime/modeling_ort#optimum.onnxruntime.ORTModelForImageClassification) class calling the `from_pretrained()` method with the `from_transformers` attribute. The model we are using is the a fine-tuned version of [google/vit-base-patch16-224-in21k](https://huggingface.co/google/vit-base-patch16-224-in21k) on the [beans](https://huggingface.co/datasets/beans) dataset ([nateraw/vit-base-beans](https://huggingface.co/nateraw/vit-base-beans)) achieving an accuracy of 96.88%.
+
+```python
+from optimum.onnxruntime import ORTModelForImageClassification
+from transformers import AutoFeatureExtractor
+from pathlib import Path
+
+
+model_id="nateraw/vit-base-beans"
+onnx_path = Path("onnx")
+
+# load vanilla transformers and convert to onnx
+model = ORTModelForImageClassification.from_pretrained(model_id, from_transformers=True)
+preprocessor = AutoFeatureExtractor.from_pretrained(model_id)
+
+# save onnx checkpoint and tokenizer
+model.save_pretrained(onnx_path)
+preprocessor.save_pretrained(onnx_path)
+```
+
+One neat thing about 🤗 Optimum, is that allows you to run ONNX models with the `pipeline()` function from 🤗 Transformers. This means that you get all the pre- and post-processing features for free, without needing to re-implement them for each model! Here's how you can run inference with our vanilla ONNX model:
+
+`https://datasets-server.huggingface.co/assets/beans/--/default/validation/30/image/image.jpg`  
+![bean-sample](/static/blog/optimizing-vision-transformer/bean.jpeg)
+
+```python
+from transformers import pipeline
+
+vanilla_clf = pipeline("image-classification", model=model, feature_extractor=preprocessor)
+print(vanilla_clf("https://datasets-server.huggingface.co/assets/beans/--/default/validation/30/image/image.jpg"))
+```
+
+If you want to learn more about exporting transformers model check-out [Convert Transformers to ONNX with Hugging Face Optimum](https://www.philschmid.de/convert-transformers-to-onnx) blog post
+
+## 3. Apply dynamic quantization using `ORTQuantizer` from Optimum
+
+The `ORTQuantizer` can be used to apply dynamic quantization to decrease the size of the model size and accelerate latency and inference.
+
+_We use the `avx512_vnni` config since the instance is powered by an intel ice-lake CPU supporting avx512._
+
+```python
+from optimum.onnxruntime import ORTQuantizer
+from optimum.onnxruntime.configuration import AutoQuantizationConfig
+
+# create ORTQuantizer and define quantization configuration
+dynamic_quantizer = ORTQuantizer.from_pretrained(model_id, feature=model.pipeline_task)
+dqconfig = AutoQuantizationConfig.avx512_vnni(is_static=False, per_channel=False)
+
+# apply the quantization configuration to the model
+model_quantized_path = dynamic_quantizer.export(
+    onnx_model_path=onnx_path / "model.onnx",
+    onnx_quantized_model_output_path=onnx_path / "model-quantized.onnx",
+    quantization_config=dqconfig,
+)
+```
+
+Lets quickly check the new model size.
+
+```python
+import os
+
+# get model file size
+size = os.path.getsize(onnx_path / "model-optimized.onnx")/(1024*1024)
+quantized_model = os.path.getsize(onnx_path / "model-quantized.onnx")/(1024*1024)
+
+print(f"Model file size: {size:.2f} MB")
+print(f"Quantized Model file size: {quantized_model:.2f} MB")
+#   Model file size: 330.27 MB
+#   Quantized Model file size: 84.50 MB
+```
+
+## 4. Test inference with the quantized model
+
+[Optimum](https://huggingface.co/docs/optimum/main/en/pipelines#optimizing-with-ortoptimizer) has built-in support for [transformers pipelines](https://huggingface.co/docs/transformers/main/en/main_classes/pipelines#pipelines). This allows us to leverage the same API that we know from using PyTorch and TensorFlow models.
+Therefore we can load our quantized model with `ORTModelForImageClassification` class and transformers `pipeline`.
+
+```python
+from optimum.onnxruntime import ORTModelForImageClassification
+from transformers import pipeline, AutoFeatureExtractor
+
+model = ORTModelForImageClassification.from_pretrained(onnx_path, file_name="model-quantized.onnx")
+preprocessor = AutoFeatureExtractor.from_pretrained(onnx_path)
+
+q8_clf = pipeline("image-classification", model=model, feature_extractor=preprocessor)
+print(q8_clf("https://datasets-server.huggingface.co/assets/beans/--/default/validation/30/image/image.jpg"))
+```
+
+## 5. Evaluate the performance and speed
+
+To evaluate the model performance and speed are we going to use a the `test` split of the [beans](https://huggingface.co/datasets/beans) dataset containing only 3 classes ('angular_leaf_spot', 'bean_rust', 'healthy') and 128 images. The evaluation was done by using [Huggingface/evaluate](https://huggingface.co/docs/evaluate/index) a library for easily evaluating machine learning models and datasets.
+
+We evaluated the vanilla model outside of this example using the same `evaluator` with the vanilla model achieving an accuraccy of `96.88%` on our dataset.
+
+```python
+from evaluate import evaluator
+from datasets import load_dataset
+
+e = evaluator("image-classification")
+eval_dataset = load_dataset("beans",split=["test"])[0]
+
+results = e.compute(
+    model_or_pipeline=q8_clf,
+    data=eval_dataset,
+    metric="accuracy",
+    input_column="image",
+    label_column="labels",
+    label_mapping=model.config.label2id,
+    strategy="simple",
+)
+
+print(f"Vanilla model: 96.88%")
+print(f"Quantized model: {results['accuracy']*100:.2f}%")
+print(f"The quantized model achieves {round(results['accuracy']/0.9688,4)*100:.2f}% accuracy of the fp32 model")
+
+#    Vanilla model: 96.88%
+#    Quantized model: 96.88%
+#    The quantized model achieves 99.99% accuracy of the fp32 model
+```
+
+Okay, now let's test the performance (latency) of our quantized model. We are going to use a the [beans sample](https://datasets-server.huggingface.co/assets/beans/--/default/validation/30/image/image.jpg) for the benchmark. To keep it simple, we are going to use a python loop and calculate the avg,mean & p95 latency for our vanilla model and for the quantized model.
+
+```python
+from time import perf_counter
+import numpy as np
+from PIL import Image
+import requests
+
+payload="https://datasets-server.huggingface.co/assets/beans/--/default/validation/30/image/image.jpg"
+
+def measure_latency(pipe):
+    # prepare date
+    image = Image.open(requests.get(payload, stream=True).raw)
+    inputs = pipe.feature_extractor(images=image, return_tensors="pt")
+    latencies = []
+    # warm up
+    for _ in range(10):
+        _ = pipe.model(**inputs)
+    # Timed run
+    for _ in range(200):
+        start_time = perf_counter()
+        _ =  pipe.model(**inputs)
+        latency = perf_counter() - start_time
+        latencies.append(latency)
+    # Compute run statistics
+    time_avg_ms = 1000 * np.mean(latencies)
+    time_std_ms = 1000 * np.std(latencies)
+    time_p95_ms = 1000 * np.percentile(latencies,95)
+    return f"P95 latency (ms) - {time_p95_ms}; Average latency (ms) - {time_avg_ms:.2f} +\- {time_std_ms:.2f};", time_p95_ms
+
+
+vanilla_model=measure_latency(vanilla_clf)
+quantized_model=measure_latency(q8_clf)
+
+print(f"Vanilla model: {vanilla_model[0]}")
+print(f"Quantized model: {quantized_model[0]}")
+print(f"Improvement through quantization: {round(vanilla_model[1]/quantized_model[1],2)}x")
+
+#    Vanilla model: P95 latency (ms) - 165.06651640004284; Average latency (ms) - 149.00 +\- 11.22;
+#    Quantized model: P95 latency (ms) - 63.56140074997256; Average latency (ms) - 62.81 +\- 2.18;
+#    Improvement through quantization: 2.6x
+```
+
+We managed to accelerate our model latency from 165ms to 64ms or 2.6x while keeping 99.99% of the accuracy.
+
+![performance](/static/blog/optimizing-vision-transformer/vit-performance.png)
+
+## Conclusion
+
+We successfully quantized our vanilla Transformers model with Hugging Face and managed to accelerate our model latency 165ms to 64ms or 2.6x while keeping 99.99% of the accuracy.
+
+But I have to say that this isn't a plug and play process you can transfer to any Transformers model, task or dataset.
