@@ -50,7 +50,7 @@ Our first step is to install Optimum, along with Evaluate and some other librari
 
 > If you want to run inference on a GPU, you can install 🤗 Optimum with `pip install optimum[onnxruntime-gpu]`.
 
-## Convert a Sentence Transformers model to ONNX and create custom Inference Pipeline
+## 2. Convert a Sentence Transformers model to ONNX and create custom Inference Pipeline
 
 Before we can start qunatizing we need to convert our vanilla `sentence-transformers` model to the `onnx` format. To do this we will use the new [ORTModelForFeatureExtraction](https://huggingface.co/docs/optimum/main/en/onnxruntime/modeling_ort#optimum.onnxruntime.ORTModelForFeatureExtraction) class calling the `from_pretrained()` method with the `from_transformers` attribute. The model we are using is the [sentence-transformers/all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) which maps sentences & paragraphs to a 384 dimensional dense vector space and can be used for tasks like clustering or semantic search and was trained on the [1-billion sentence dataset](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2#training-data).
 
