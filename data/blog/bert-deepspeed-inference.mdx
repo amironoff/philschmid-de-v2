@@ -196,6 +196,8 @@ InferenceEngine(
           )
 ```
 
+we can validate this with a simple `assert`.
+
 ```python
 from deepspeed.ops.transformer.inference import DeepSpeedTransformerInference
 
@@ -230,8 +232,6 @@ In our example, did we achieve on the `conll2003` evaluation dataset an f1 score
 ```python
 print(f"The optimized ds-model achieves {round(ds_results['overall_f1']/results['overall_f1'],4)*100:.2f}% accuracy of the vanilla transformers model.")
 ```
-
-    The optimized ds-model achieves 99.88% accuracy of the vanilla transformers model.
 
 The optimized ds-model achieves `99.88%` accuracy of the vanilla transformers model.
 
