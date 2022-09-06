@@ -32,7 +32,7 @@ Before we can start, make sure you have a [Hugging Face Account](https://hugging
 Document Understanding Transformer (Donut) is a new Transformer model for OCR-free document understanding. It doesn't require an OCR engine to process scanned documents but is achieving state-of-the-art performances on various visual document understanding tasks, such as visual document classification or information extraction (a.k.a. document parsing).
 Donut is a multimodal sequence-to-sequence model with a vision encoder ([Swin Transformer](https://huggingface.co/docs/transformers/v4.21.2/en/model_doc/swin#overview)) and text decoder ([BART](https://huggingface.co/docs/transformers/v4.21.2/en/model_doc/bart)). The encoder receives the images and computes it into an embedding, which is then passed to the decoder, which generates a sequence of tokens.
 
-![donut]/static/blog/fine-tuning-donut/donut.png)
+![donut](/static/blog/fine-tuning-donut/donut.png)
 
 - Paper: https://arxiv.org/abs/2111.15664
 - Official repo: https://github.com/clovaai/donut
@@ -166,7 +166,7 @@ dataset[random_sample]['image'].resize((250,400))
 #     OCR text is {"company": "LIM SENG THO HARDWARE TRADING", "date": "29/12/2017", "address": "NO 7, SIMPANG OFF BATU VILLAGE, JALAN IPOH BATU 5, 51200 KUALA LUMPUR MALAYSIA", "total": "6.00"}
 ```
 
-![png](from datasets import load_dataset/donut_sroie_14_1.png)
+![png](/static/blog/fine-tuning-donut/donut_sroie_14_1.png)
 
 ## 3. Prepare dataset for Donut
 
@@ -471,7 +471,7 @@ Prediction:
 {'total': '9.30', 'date': '26/11/2017', 'company': 'SANYU STATIONERY SHOP', 'address': 'NO. 31G&33G, JALAN SETIA INDAH X,U13/X 40170 SETIA ALAM'}
 ```
 
-![png](from datasets import load_dataset/donut_sroie_33_1.png)
+![png](/static/blog/fine-tuning-donut/donut_sroie_33_1.png)
 
 Nice 😍🔥 Our fine-tuned parsed the document correctly and extracted the right values. Our next step is to evalute our model on the test set. Since the model itself is a seq2seq is not that straightforward to evaluate.
 
