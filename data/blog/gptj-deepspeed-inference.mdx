@@ -9,7 +9,7 @@ tags:
   - Optimization
 draft: false
 summary: Learn how to optimize GPT-J for GPU inference with a 1-line of code using Hugging Face Transformers and DeepSpeed.
-images: ['/static/blog/gptj-deepspeed-inference/gptj-deepspeed-inference.png']
+images: ['/static/blog/gptj-deepspeed-inference/gptj-inference-latency.png']
 repository: https://github.com/philschmid/transformers-deepspeed/blob/main/inference/gpt_optimzation.ipynb
 ---
 
@@ -260,7 +260,7 @@ Our Optimized DeepsPeed model achieves latency of `6.5s` for `128` tokens or `50
 
 We managed to accelerate the `GPT-J-6B` model latency from `8.9s` to `6.5` for generating `128` tokens. This results into an improvement from `69ms/token` to `50ms/token` or 1.38x.
 
-![gpt-j-latency](/static/blog/gptj-deepspeed-inference/gptj-inference-inference.png)
+![gpt-j-latency](/static/blog/gptj-deepspeed-inference/gptj-inference-latency.png)
 
 ## Conclusion
 
