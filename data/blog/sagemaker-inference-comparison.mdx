@@ -26,11 +26,11 @@ Each of these inference options has different characteristics and use cases. The
 **Comparison table**
 
 | Option          | latency budget | execution period        | max payload size | real-world example      | accelerators (GPU) | pricing                                                       |
-| --------------- | -------------- | ----------------------- | ---------------- | ----------------------- | ------------------ | ------------------------------------------------------------- | --- |
+| --------------- | -------------- | ----------------------- | ---------------- | ----------------------- | ------------------ | ------------------------------------------------------------- |
 | real-time       | milliseconds   | constantly              | 6MB              | route estimation        | Yes                | up time of the endpoint                                       |
 | batch transform | hours          | ones a day/week         | Unlimited        | nightly embedding jobs  | Yes                | prediction (transform) time                                   |
 | async inference | minutes        | every few minutes/hours | 1GB              | post-call transcription | Yes                | up time of the endpoint, can sacle to 0 when there is no load |
-| serverless      | seconds        | every few minutes       | 6MB              | PoC for classification  | No                 | compute time (serverless)                                     |     |
+| serverless      | seconds        | every few minutes       | 6MB              | PoC for classification  | No                 | compute time (serverless)                                     |
 
 **Examples**
 
