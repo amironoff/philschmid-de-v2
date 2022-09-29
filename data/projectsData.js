@@ -1,5 +1,12 @@
 const projectsData = [
   {
+    title: '🤗 Inference Endpoints',
+    description: `🤗 Inference Endpoints is a secure production solution to easily deploy ML models on dedicated, secure & scalable infrastructure.`,
+    role: 'Creator & Technical Lead',
+    imgSrc: '/static/projects/endpoints.png',
+    href: 'https://huggingface.co/inference-endpoints',
+  },
+  {
     title: 'Hugging Face Endpoints on Azure',
     description: `Hugging Face Endpoints, a new Machine Learning (ML) inference service powered by Azure ML Managed Endpoints. Hugging Face Endpoints let you securely deploy and scale tens of thousands of state-of-the-art Transformer models on Microsoft Azure with just a few clicks.`,
     role: 'Technical Lead',
