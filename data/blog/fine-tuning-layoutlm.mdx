@@ -20,7 +20,7 @@ We will use the [FUNSD](https://guillaumejaume.github.io/FUNSD/) dataset a colle
 You will learn how to:
 
 1. [Setup Development Environment](#1-setup-development-environment)
-2. [Load and prepare FUNSD dataset](#2-load-sroie-dataset)
+2. [Load and prepare FUNSD dataset](#2-load-and-prepare-funsd-dataset)
 3. [Fine-tune and evaluate LayoutLM](#3-fine-tune-and-evaluate-layoutlm)
 4. [Run inference and parse form](#4-run-inference-and-parse-form)
 
@@ -280,7 +280,7 @@ trainer.create_model_card()
 trainer.push_to_hub()
 ```
 
-## 4. Run Inference
+## 4. Run inference and parse form
 
 Now we have a trained model, we can use it to run inference. We will create a function that takes a document image and returns the extracted text and the bounding boxes.
 
