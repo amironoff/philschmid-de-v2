@@ -1,12 +1,12 @@
 ---
 title: 'Document AI: Fine-tuning LayoutLM for document-understanding using Hugging Face Transformers '
-date: '2022-09-06'
-lastmod: '2022-09-06'
+date: '2022-10-04'
+lastmod: '2022-10-04'
 tags:
   - DocumentAI
   - HuggingFace
   - Transformers
-  - Donut
+  - LayoutLM
 draft: false
 summary: Learn how to fine-tune LayoutLM for document-understand using Hugging Face Transformers. LayoutLM is a document image understanding and information extraction transformers.
 images: ['/static/blog/fine-tuning-donut/logo.png']
@@ -21,7 +21,7 @@ You will learn how to:
 
 1. [Setup Development Environment](#1-setup-development-environment)
 2. [Load and prepare FUNSD dataset](#2-load-sroie-dataset)
-3. [Fine-tune and evaluate LayoutLM](#3-fine-tune-and-evaluate-donut-model)
+3. [Fine-tune and evaluate LayoutLM](#3-fine-tune-and-evaluate-layoutlm)
 4. [Run inference and parse form](#4-run-inference-and-parse-form)
 
 Before we can start, make sure you have a [Hugging Face Account](https://huggingface.co/join) to save artifacts and experiments.
@@ -30,7 +30,7 @@ Before we can start, make sure you have a [Hugging Face Account](https://hugging
 
 LayoutLM is a multimodal Transformer model for document image understanding and information extraction transformers and can be used form understanding and receipt understanding.
 
-![donut](/static/blog/fine-tuning-layoutlm/layoutlm.png)
+![layoutlm](/static/blog/fine-tuning-layoutlm/layoutlm.png)
 
 - Paper: https://arxiv.org/pdf/1912.13318.pdf
 - Official repo: https://github.com/microsoft/unilm/tree/master/layoutlm
