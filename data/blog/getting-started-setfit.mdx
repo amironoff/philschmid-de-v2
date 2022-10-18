@@ -1,7 +1,7 @@
 ---
 title: 'Outperform OpenAI GPT-3 with SetFit at text-classifiation'
-date: '2022-10-20'
-lastmod: '2022-10-20'
+date: '2022-10-18'
+lastmod: '2022-10-18'
 tags:
   - GPT3
   - HuggingFace
@@ -30,7 +30,7 @@ You will learn how to:
 1. [Setup Development Environment](#1-setup-development-environment)
 2. [Create Dataset](#2-create-dataset)
 3. [Fine-Tune Classifier with SetFit](#3-fine-tune-classifier-with-setfit)
-4. [Use Hyperparameter search to optimize results](#4-use-hyperparameter-search-to-optimize-results)
+4. [Use Hyperparameter search to optimize results](#4-use-hyperparameter-search-to-optimize-result)
 
 ## Why SetFit is better
 
@@ -54,7 +54,7 @@ Our first step is to install the Hugging Face Libraries, including SetFit. Runni
 %pip install setfit[optuna]==0.3.0 datasets -U
 ```
 
-# 2. Create Dataset
+## 2. Create Dataset
 
 We are going to use the [ag_news](https://huggingface.co/datasets/ag_news) dataset, which a news article classification dataset with `4` classes: World (0), Sports (1), Business (2), Sci/Tech (3).
 
@@ -85,7 +85,7 @@ test_dataset = dataset["test"]
 
 ```
 
-## Fine-Tune Classifier with SetFit
+## 3. Fine-Tune Classifier with SetFit
 
 When using SetFit we first fine-tune a Sentence Transformer model using our labeled data and contrastive training, where positive and negative pairs are created by in-class and out-class selection.
 The second step a classification head is trained on the encoded embeddings with their respective class labels.
