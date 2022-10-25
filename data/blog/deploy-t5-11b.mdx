@@ -47,7 +47,7 @@ In this tutorial, you will learn how to deploy [T5 11B](https://huggingface.co/t
 To be able to fit T5-11b into a single GPU, we are going to use two techniques:
 
 - **mixed precision and sharding:** Converting the weights to fp16 will reduce the memory footprint by 2x, and sharding will allow us to easily place each “shard” on a GPU without the need to load the model into CPU memory first.
-- \***\*LLM.int8():\*\*** introduces a new quantization technique for Int8 matrix multiplication, which cuts the memory needed for inference by half while. To learn more about check out this [blog post](https://huggingface.co/blog/hf-bitsandbytes-integration) or the [paper](https://arxiv.org/abs/2208.07339).
+- **LLM.int8():** introduces a new quantization technique for Int8 matrix multiplication, which cuts the memory needed for inference by half while. To learn more about check out this [blog post](https://huggingface.co/blog/hf-bitsandbytes-integration) or the [paper](https://arxiv.org/abs/2208.07339).
 
 We already prepared a repository with sharded fp16 weights of `T5-11B` on the Hugging Face Hub at: [philschmid/t5-11b-sharded](https://huggingface.co/philschmid/t5-11b-sharded). Those weights were created using the following snippet.
 
