@@ -113,7 +113,7 @@ Running on local URL:  http://127.0.0.1:8080/
 
 If we now open this URL in the browser we should see our application and can test it.
 
-![local-gradio-application](/static/blog/serverless-gradio/local-gradio.py)
+![local-gradio-application](/static/blog/serverless-gradio/local-gradio.png)
 
 ## 3. Deploy Gradio application to AWS Lambda with AWS CDK
 
@@ -207,7 +207,7 @@ GradioLambda.functionUrl = https://qyjifuled7ajxv4elkrray7vpm0gpiqi.lambda-url.e
 
 We can now open our gradio application with the `functionUrl` from the deployment. This will start our Lambda function, load our transformers model and run our gradio application. The cold start can be between 30-60s, but afterward, the usage and prediction should take < 100ms, and we are only paying for the “compute” time, which is amazing.
 
-![lambda-gradio-application](/static/blog/serverless-gradio/lambda-gradio.py)
+![lambda-gradio-application](/static/blog/serverless-gradio/lambda-gradio.png)
 
 ## 5. _Optional_: embed the Gradio application into a website
 
