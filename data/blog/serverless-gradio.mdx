@@ -1,0 +1,244 @@
+---
+title: 'Serverless Machine Learning Applications with Hugging Face Gradio and AWS Lambda'
+date: '2022-11-15'
+lastmod: '2022-11-15'
+tags:
+  - Serverless
+  - HuggingFace
+  - AWS
+  - Gradio
+draft: false
+summary: Learn how to deploy a Hugging Face Gradio Application using Hugging Face Transformers to AWS Lambda for serverless workloads.
+images: ['/static/blog/serverless-gradio/thumbnail.png']
+repository: https://github.com/philschmid/serverless-machine-learning/tree/main/gradio-aws-lambda-transformers
+---
+
+_“Serverless computing is a method of providing backend services on an as-used basis. A serverless provider allows users to write and deploy code without […] worrying about the underlying infrastructure ”_ [[What is serverless computing?](https://www.cloudflare.com/en-gb/learning/serverless/what-is-serverless/)]
+
+Serverless computing can offer advantages over traditional cloud-based or server-centric infrastructure, like greater scalability, more flexibility, and quicker time to release, all at a reduced cost. Serverless computing is/was mostly used for web development and not for machine learning, due to its computing and resource-intensive nature.
+
+But with the increasing request and improvements of Serverless Cloud services, machine learning becomes more and more suitable for those environments, if you accept the existing trade-offs, e.g., [cold starts](https://aws.amazon.com/de/blogs/compute/operating-lambda-performance-optimization-part-1/) or limited hardware.
+
+This blog covers how to deploy a Gradio application to AWS Lambda, you will learn how to:
+
+1. [Create a Gradio application for `sentiment-analysis` using `transformers` ](#1-create-a-gradio-application-for-sentiment-analysis-using-transformers)
+2. [Test the local Gradio application](#2-test-the-local-gradio-application)
+3. [Deploy Gradio application to AWS Lambda with AWS CDK](#3-deploy-gradio-application-to-aws-lambda-with-aws-cdk)
+4. [Test the serverless Gradio application](#4-test-the-serverless-gradio-application)
+5. [_Optional_: embed the Gradio application into a website](#5-optional-embed-the-gradio-application-into-a-website)
+
+You will find the complete code for it in this [GitHub repository.](https://github.com/philschmid/serverless-machine-learning/tree/main)
+
+## What is AWS Lambda?
+
+[AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html) is a serverless computing service that lets you run code without managing servers. It executes your code only when required and scales automatically, from a few requests per day to thousands per second.
+
+## What is Hugging Face Gradio?
+
+[Hugging Face Gradio](https://www.gradio.app/) is a Python library to rapidly build machine learning applications with a friendly web interface that anyone can use and share. Gradio supports an intuitive interface for machine learning use cases, which use text, images, audio, 3D objects, and more.
+
+## 1. Create a Gradio application for `sentiment-analysis` using `transformers`
+
+The first step is to create a Gradio application, which we can later deploy to AWS Lambda as our serverless application. We are going to create a `sentiment-analysis` application using Hugging Face Transformers. We first need to create a file with all the Python dependencies we need and install them. Therefore we create a `requirements.txt` file in a new directory, e.g., `serverless_gradio/`, and include `gradio`, `transformers`, and `torch` as dependencies.
+
+```bash
+# requirements.txt
+gradio==3.1.4
+transformers
+torch
+```
+
+We can now install them with `pip install -r requirements.txt`. After the installation, we can create our `app.py` file, which includes our gradio application. This blog doesn’t cover details on how to create Gradio applications. If you are new to gradio you should check out the [Introduction to Gradio](https://huggingface.co/course/chapter9/1?fw=pt) section in the Hugging Face course or the [Quickstart](https://gradio.app/getting_started/) guide by the Gradio Team
+
+```python
+# app.py
+import gradio as gr
+from transformers import pipeline
+
+# load transformers pipeline from a local directory (model)
+clf = pipeline("sentiment-analysis", model="model/")
+
+# predict function used by gradio
+def sentiment(payload):
+    prediction = clf(payload, return_all_scores=True)
+    # convert list to dict
+    result = {}
+    for pred in prediction[0]:
+        result[pred["label"]] = pred["score"]
+    return result
+
+# create gradio interface, with text input and dict output
+demo = gr.Interface(
+    fn=sentiment,
+    inputs=gr.Textbox(placeholder="Enter a positive or negative sentence here..."),
+    outputs="label",
+    interpretation="default",
+    examples=[["I Love Serverless Machine Learning"], ["Running Gradio on AWS Lambda is amazing"]],
+    allow_flagging="never",
+)
+
+# run the app
+demo.launch(server_port=8080, enable_queue=False)
+```
+
+Our Gradio application will have one text input and will use the `transformers` pipeline to run predictions on the “text” input. The pipeline will use a model we provide through a local directory (`model/`), to reduce the overhead of downloading it from the [Hugging Face Hub](https://huggingface.co/models) when running on AWS Lambda.
+
+We use a python script to download and save our model into the directory. Therefore we create a `download_model.py` file and add the following code.
+
+```python
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+# hugging face model id
+model_id = "distilbert-base-uncased-finetuned-sst-2-english"
+
+AutoModelForSequenceClassification.from_pretrained(model_id).save_pretrained("model")
+AutoTokenizer.from_pretrained(model_id).save_pretrained("model")
+```
+
+Next, we need to run the script with `python download_model.py` , which will load our model from the [Hugging Face Hub](https://huggingface.co/models) and save it in a local `model/`. After that, we are ready to test our application.
+
+## 2. Test the local Gradio application
+
+After we create our `app.py` and download our model to `model/` we can start our application.
+
+```bash
+python app.py
+```
+
+Our gradio applications get now started, and we should see a terminal output with a local URL to open
+
+```bash
+Running on local URL:  http://127.0.0.1:8080/
+```
+
+If we now open this URL in the browser we should see our application and can test it.
+
+![local-gradio-application](/static/blog/serverless-gradio/local-gradio.py)
+
+## 3. Deploy Gradio application to AWS Lambda with AWS CDK
+
+We now have a working application the next step is to deploy it to AWS Lambda. Before we can start deploying, make sure you have the **[AWS CDK installed](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html#getting_started_install)** and **[configured your AWS credentials](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html#getting_started_prerequisites)**. In addition, we also need to install some Python dependencies
+
+```bash
+pip install "aws-cdk-lib>=2.0.0" "constructs>=10.0.0"
+```
+
+Like Gradio, we are not covering the creation of the IaC resources (`cdk.py`) if you want to learn more about the [AWS Example](https://docs.aws.amazon.com/cdk/v2/guide/work-with-cdk-python.html). We now need to create a `cdk.json` and `cdk.py`which contains the infrastructure creation for our AWS Lambda function.
+
+The `cdk.json` needs to include
+
+```json
+{
+  "app": "python3 cdk.py"
+}
+```
+
+and the `cdk.py`
+
+```python
+import os
+from pathlib import Path
+from constructs import Construct
+from aws_cdk import App, Stack, Environment, Duration, CfnOutput
+from aws_cdk import Environment, Stack
+from aws_cdk.aws_lambda import DockerImageFunction, DockerImageCode, Architecture, FunctionUrlAuthType
+
+my_environment = Environment(account=os.environ["CDK_DEFAULT_ACCOUNT"], region=os.environ["CDK_DEFAULT_REGION"])
+
+class GradioLambda(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # create function
+        lambda_fn = DockerImageFunction(
+            self,
+            "GradioApp",
+            code=DockerImageCode.from_image_asset(str(Path.cwd()), file="Dockerfile"),
+            architecture=Architecture.X86_64,
+            memory_size=8192,
+            timeout=Duration.minutes(2),
+        )
+        # add HTTPS url
+        fn_url = lambda_fn.add_function_url(auth_type=FunctionUrlAuthType.NONE)
+        CfnOutput(self, "functionUrl", value=fn_url.url)
+
+app = App()
+rust_lambda = GradioLambda(app, "GradioLambda", env=my_environment)
+
+app.synth()
+```
+
+As you might have seen, we are using the `DockerImageFunction`, meaning that we will deploy a container to AWS Lambda. For this, we need to create our `Dockerfile` , which CDK will then use, build and deploy. The `Dockerfile` will use the `python3.8.12` base image, install our `requirements.txt`, copy our `model/` and `app.py` and run it. Those things seem pretty identical to common container setups. The only “unique” about our `Dockerfile` and being able to use it with AWS Lambda is that we are using the [AWS Lambda Web Adapter](https://github.com/awslabs/aws-lambda-web-adapter#aws-lambda-web-adapter). AWS Lambda Web Adapter allows using regular web services on AWS Lambda.
+
+```python
+# Dockerfile
+FROM public.ecr.aws/docker/library/python:3.8.12-slim-buster
+
+COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.4.0 /lambda-adapter /opt/extensions/lambda-adapter
+WORKDIR /var/task
+
+COPY requirements.txt  ./requirements.txt
+RUN python -m pip install -r requirements.txt
+
+COPY app.py  ./
+COPY model/  ./model/
+CMD ["python3", "app.py"]
+```
+
+Now, we are ready to deploy our application.
+
+```bash
+cdk bootstrap
+cdk deploy
+```
+
+CDK will now build our container, push it to AWS and then deploy our AWS Lambda function. It will also add an [AWS Lambda function URL](https://docs.aws.amazon.com/lambda/latest/dg/lambda-urls.html), which we can access and send requests to our Lambda function. After a few minutes, we should see a console output similar to the one below.
+
+```python
+✅  GradioLambda
+
+✨  Deployment time: 359.83s
+
+Outputs:
+GradioLambda.functionUrl = https://qyjifuled7ajxv4elkrray7vpm0gpiqi.lambda-url.eu-west-1.on.aws/
+```
+
+## 4. Test the serverless Gradio application
+
+We can now open our gradio application with the `functionUrl` from the deployment. This will start our Lambda function, load our transformers model and run our gradio application. The cold start can be between 30-60s, but afterward, the usage and prediction should take < 100ms, and we are only paying for the “compute” time, which is amazing.
+
+![lambda-gradio-application](/static/blog/serverless-gradio/lambda-gradio.py)
+
+## 5. _Optional_: embed the Gradio application into a website
+
+Gradio allows us to integrate our application as a “component” into HTML. Embedding our machine learning application allows us, everyone, to try it out without needing to download or install anything — right in their browser! The best part is that you can embed interactive demos in web applications, mobile applications, and static websites, such as GitHub pages or WordPress.
+
+You can copy the snippet below and replace the `FUNCTION_URL` with your AWS Lambda function, which should work.
+
+```bash
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <script type="module" src="https://gradio.s3-us-west-2.amazonaws.com/3.4/gradio.js">
+  </script>
+</head>
+
+<body>
+  <gradio-app src="FUNCTION_URL"></gradio-app>
+</body>
+
+</html>
+```
+
+## Conclusion
+
+With the help of [AWS Lambda Web Adapter](https://github.com/awslabs/aws-lambda-web-adapter#aws-lambda-web-adapter) and the Lambda Function URLs, we were able to deploy a Gradio application, which Hugging Face DistilBERT to AWS Lambda for a completely serverless environment.
+
+The biggest issue in the past and still up-to-date are cold starts (time from the start until the application is ready to serve requests). The few seconds of cold-start is reasonably low for using a Transformer model. Additionally, the benefit of using Gradio here is that we have the UI coupled with the model, meaning once the UI is ready, the model is also ready. This allows us to integrate Demos into websites or applications and only pay for the execution time of our lambda function, which is a great way and use for infrequently accessed applications as well as proof-of-concept applications.
+
+Additionally, you can easily implement a “warm keeper”, for our application.
+
+---
+
+Thanks for reading. If you have any questions, contact me via [email](mailto:philipp@huggingface.co) or [forum](https://discuss.huggingface.co/c/inference-endpoints/64). You can also connect with me on [Twitter](https://twitter.com/_philschmid) or [LinkedIn](https://www.linkedin.com/in/philipp-schmid-a6a2bb196/).
