@@ -1,7 +1,7 @@
 ---
 title: Optimizing Transformers with Hugging Face Optimum
 date: '2022-06-30'
-lastmod: '2022-06-30'
+lastmod: '2022-11-18'
 tags:
   - BERT
   - OnnxRuntime
@@ -11,6 +11,8 @@ draft: false
 summary: Learn how to optimize Hugging Face Transformers models using Optimum. The session will show you how to dynamically quantize and optimize a DistilBERT model using Hugging Face Optimum and ONNX Runtime. Hugging Face Optimum is an extension of 🤗 Transformers, providing a set of performance optimization tools enabling maximum efficiency to train and run models on targeted hardware.
 repository: https://github.com/philschmid/optimum-transformers-optimizations/blob/master/notebook.ipynb
 ---
+
+_last update: 2022-11-18_
 
 In this session, you will learn how to optimize Hugging Face Transformers models using Optimum. The session will show you how to dynamically quantize and optimize a DistilBERT model using [Hugging Face Optimum](https://huggingface.co/docs/optimum/index) and [ONNX Runtime](https://onnxruntime.ai/). Hugging Face Optimum is an extension of 🤗 Transformers, providing a set of performance optimization tools enabling maximum efficiency to train and run models on targeted hardware.
 
@@ -40,7 +42,7 @@ _This tutorial was created and run on an c6i.xlarge AWS EC2 Instance._
 Our first step is to install Optimum, along with Evaluate and some other libraries. Running the following cell will install all the required packages for us including Transformers, PyTorch, and ONNX Runtime utilities:
 
 ```python
-!pip install "optimum[onnxruntime]==1.2.3" evaluate[evaluator] sklearn mkl-include mkl
+!pip install "optimum[onnxruntime]==1.5.0" evaluate[evaluator] sklearn mkl-include mkl --upgrade
 ```
 
 > If you want to run inference on a GPU, you can install 🤗 Optimum with `pip install optimum[onnxruntime-gpu]`.
@@ -99,13 +101,12 @@ from optimum.onnxruntime import ORTOptimizer
 from optimum.onnxruntime.configuration import OptimizationConfig
 
 # create ORTOptimizer and define optimization configuration
-optimizer = ORTOptimizer.from_pretrained(model_id, feature=model.pipeline_task)
+optimizer = ORTOptimizer.from_pretrained(model)
 optimization_config = OptimizationConfig(optimization_level=99) # enable all optimizations
 
 # apply the optimization configuration to the model
-optimizer.export(
-    onnx_model_path=onnx_path / "model.onnx",
-    onnx_optimized_model_output_path=onnx_path / "model-optimized.onnx",
+optimizer.optimize(
+    save_dir=onnx_path,
     optimization_config=optimization_config,
 )
 ```
@@ -116,7 +117,7 @@ To test performance we can use the ORTModelForSequenceClassification class again
 from transformers import pipeline
 
 # load optimized model
-model = ORTModelForSequenceClassification.from_pretrained(onnx_path, file_name="model-optimized.onnx")
+model = ORTModelForSequenceClassification.from_pretrained(onnx_path, file_name="model_optimized.onnx")
 
 # create optimized pipeline
 optimized_clf = pipeline("text-classification", model=model, tokenizer=tokenizer)
@@ -134,13 +135,12 @@ from optimum.onnxruntime import ORTQuantizer
 from optimum.onnxruntime.configuration import AutoQuantizationConfig
 
 # create ORTQuantizer and define quantization configuration
-dynamic_quantizer = ORTQuantizer.from_pretrained(model_id, feature=model.pipeline_task)
+dynamic_quantizer = ORTQuantizer.from_pretrained(model)
 dqconfig = AutoQuantizationConfig.avx512_vnni(is_static=False, per_channel=False)
 
 # apply the quantization configuration to the model
-model_quantized_path = dynamic_quantizer.export(
-    onnx_model_path=onnx_path / "model-optimized.onnx",
-    onnx_quantized_model_output_path=onnx_path / "model-quantized.onnx",
+model_quantized_path = dynamic_quantizer.quantize(
+    save_dir=onnx_path,
     quantization_config=dqconfig,
 )
 ```
@@ -151,8 +151,8 @@ Lets quickly check the new model size.
 import os
 
 # get model file size
-size = os.path.getsize(onnx_path / "model-optimized.onnx")/(1024*1024)
-quantized_model = os.path.getsize(onnx_path / "model-quantized.onnx")/(1024*1024)
+size = os.path.getsize(onnx_path / "model_optimized.onnx")/(1024*1024)
+quantized_model = os.path.getsize(onnx_path / "model_optimized_quantized.onnx")/(1024*1024)
 
 print(f"Model file size: {size:.2f} MB")
 print(f"Quantized Model file size: {quantized_model:.2f} MB")
@@ -167,7 +167,7 @@ Therefore we can load our quantized model with `ORTModelForSequenceClassificatio
 from optimum.onnxruntime import ORTModelForSequenceClassification
 from transformers import pipeline, AutoTokenizer
 
-model = ORTModelForSequenceClassification.from_pretrained(onnx_path,file_name="model-quantized.onnx")
+model = ORTModelForSequenceClassification.from_pretrained(onnx_path,file_name="model_optimized_quantized.onnx")
 tokenizer = AutoTokenizer.from_pretrained(onnx_path)
 
 q8_clf = pipeline("text-classification",model=model, tokenizer=tokenizer)

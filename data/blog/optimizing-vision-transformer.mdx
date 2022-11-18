@@ -1,7 +1,7 @@
 ---
 title: Accelerate Vision Transformer (ViT) with Quantization using Optimum
 date: '2022-07-19'
-lastmod: '2022-07-19'
+lastmod: '2022-11-18'
 tags:
   - ViT
   - OnnxRuntime
@@ -12,6 +12,8 @@ summary: Learn how to optimize Vision Transformer (ViT) using Hugging Face Optim
 images: ['/static/blog/optimizing-vision-transformer/vit-performance.png']
 repository: https://github.com/philschmid/optimum-transformers-optimizations/blob/master/vision-transformers.ipynb
 ---
+
+_last update: 2022-11-18_
 
 In this session, you will learn how to optimize Vision Transformers models using Optimum. The session will show you how to dynamically quantize and optimize a ViT model using [Hugging Face Optimum](https://huggingface.co/docs/optimum/index) and [ONNX Runtime](https://onnxruntime.ai/). Hugging Face Optimum is an extension of 🤗 Transformers, providing a set of performance optimization tools enabling maximum efficiency to train and run models on targeted hardware.
 
@@ -47,8 +49,7 @@ The Vision Transformer (ViT) is basically BERT, but applied to images. It attain
 Our first step is to install Optimum, along with Evaluate and some other libraries. Running the following cell will install all the required packages for us including Transformers, PyTorch, and ONNX Runtime utilities:
 
 ```python
-!pip install "optimum[onnxruntime]==1.3.0"  sklearn mkl-include mkl datasets --upgrade
-!pip install git+https://github.com/huggingface/evaluate --upgrade # workaround until image-classification is added
+!pip install "optimum[onnxruntime]==1.5.0" evaluate[evaluator] sklearn mkl-include mkl --upgrade
 ```
 
 > If you want to run inference on a GPU, you can install 🤗 Optimum with `pip install optimum[onnxruntime-gpu]`.
@@ -100,13 +101,12 @@ from optimum.onnxruntime import ORTQuantizer
 from optimum.onnxruntime.configuration import AutoQuantizationConfig
 
 # create ORTQuantizer and define quantization configuration
-dynamic_quantizer = ORTQuantizer.from_pretrained(model_id, feature=model.pipeline_task)
+dynamic_quantizer = ORTQuantizer.from_pretrained(model)
 dqconfig = AutoQuantizationConfig.avx512_vnni(is_static=False, per_channel=False)
 
 # apply the quantization configuration to the model
-model_quantized_path = dynamic_quantizer.export(
-    onnx_model_path=onnx_path / "model.onnx",
-    onnx_quantized_model_output_path=onnx_path / "model-quantized.onnx",
+model_quantized_path = dynamic_quantizer.quantize(
+    save_dir=onnx_path,
     quantization_config=dqconfig,
 )
 ```
@@ -117,8 +117,8 @@ Lets quickly check the new model size.
 import os
 
 # get model file size
-size = os.path.getsize(onnx_path / "model-optimized.onnx")/(1024*1024)
-quantized_model = os.path.getsize(onnx_path / "model-quantized.onnx")/(1024*1024)
+size = os.path.getsize(onnx_path / "model.onnx")/(1024*1024)
+quantized_model = os.path.getsize(onnx_path / "model_quantized.onnx")/(1024*1024)
 
 print(f"Model file size: {size:.2f} MB")
 print(f"Quantized Model file size: {quantized_model:.2f} MB")
@@ -135,7 +135,7 @@ Therefore we can load our quantized model with `ORTModelForImageClassification` 
 from optimum.onnxruntime import ORTModelForImageClassification
 from transformers import pipeline, AutoFeatureExtractor
 
-model = ORTModelForImageClassification.from_pretrained(onnx_path, file_name="model-quantized.onnx")
+model = ORTModelForImageClassification.from_pretrained(onnx_path, file_name="model_quantized.onnx")
 preprocessor = AutoFeatureExtractor.from_pretrained(onnx_path)
 
 q8_clf = pipeline("image-classification", model=model, feature_extractor=preprocessor)
