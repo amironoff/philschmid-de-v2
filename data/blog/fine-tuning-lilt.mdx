@@ -17,7 +17,7 @@ In this post, you will learn how to fine-tune [LiLt](https://huggingface.co/docs
 This means you can use non-English RoBERTa checkpoints, e.g. [bertin-project/bertin-roberta-base-spanish](https://huggingface.co/bertin-project/bertin-roberta-base-spanish) for document understanding tasks. To convert a RoBERTa checkpoint to a LiLT checkpoint, you can follow [this guide](https://github.com/jpWang/LiLT#or-generate-your-own-checkpoint-optional).
 [LiLt](https://huggingface.co/docs/transformers/v4.24.0/en/model_doc/lilt#lilt) is released with a MIT license and is available on the [Hugging Face Hub](https://huggingface.co/models?other=lilt).
 
-In this example we will use the [FUNSD](https://guillaumejaume.github.io/FUNSD/) dataset — a collection of 199 fully annotated forms. More information about FUNSD can be found at its [GitHub page](https://guillaumejaume.github.io/FUNSD/).
+In this example we will use the [FUNSD](https://guillaumejaume.github.io/FUNSD/) dataset — a collection of 199 fully annotated forms. More information about FUNSD can be found on its [GitHub page](https://guillaumejaume.github.io/FUNSD/).
 
 You will learn how to:
 
@@ -30,7 +30,7 @@ Before we start, make sure you have a [Hugging Face Account](https://huggingface
 
 ## Quick intro: LiLT Language-independent Layout Transformer
 
-LiLT is a language-independent Transformer model for document image understanding and information extraction. It can be used understanding receipts and forms. LiLT can be pretrained on structured documents in one language and then directly fine-tuned on other languages with the corresponding off-the-shelf monolingual/multilingual pre-trained textual models.
+LiLT is a language-independent Transformer model for document image understanding and information extraction. Put simply, you can use it to build a system that understands receipts and forms. LiLT can be pretrained on structured documents in one language and then directly fine-tuned on other languages with the corresponding off-the-shelf monolingual/multilingual pre-trained textual models.
 
 ![lilt](/static/blog/fine-tuning-lilt/lilt.png)
 
@@ -41,7 +41,7 @@ LiLT is a language-independent Transformer model for document image understandin
 
 Now we know how LiLT works, let's get started. 🚀
 
-_Note: This tutorial was created and run on a g4dn.xlarge AWS EC2 Instance including a NVIDIA T4._
+_Note: This tutorial was created and run on a g4dn.xlarge AWS EC2 Instance including an NVIDIA T4._
 
 ## 1. Setup Development Environment
 
@@ -182,7 +182,7 @@ print(proc_dataset["train"].features.keys())
 
 ## 3. Fine-tune and evaluate LiLT
 
-Having processed our dataset, we can start training our model. Therefore we first need to load the [SCUT-DLVCLab/lilt-roberta-en-base](SCUT-DLVCLab/lilt-roberta-en-base) model, which is based on a English RoBERTa model with the `LiltForTokenClassification` class with the label mapping of our dataset.
+Having processed our dataset, we can start training our model. We first need to load the [SCUT-DLVCLab/lilt-roberta-en-base](SCUT-DLVCLab/lilt-roberta-en-base) model, which is based on a English RoBERTa model with the `LiltForTokenClassification` class with the label mapping of our dataset.
 
 ```python
 from transformers import LiltForTokenClassification
