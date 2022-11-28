@@ -1,0 +1,127 @@
+---
+title: Stable Diffusion with Hugging Face Inference Endpoints
+date: '2022-11-08'
+lastmod: '2022-11-08'
+tags:
+  - Diffusion
+  - Inference
+  - HuggingFace
+  - Generation
+draft: false
+summary: Learn how to deploy Stable Diffusion 2.0 on Hugging Face Infernece Endpoints to generate images based from text.
+images: ['/static/blog/stable-diffusion-inference-endpoints/thubmnail.png']
+---
+
+Welcome to this Hugging Face Inference Endpoints guide on how to deploy [Stable Diffusion](https://huggingface.co/blog/stable_diffusion)
+to generate images for a given input prompt. We will deploy [stabilityai/stable-diffusion-2](https://huggingface.co/stabilityai/stable-diffusion-2)
+to Inference Endpoints for real-time inference using Hugging Faces [🧨 Diffusers library](https://huggingface.co/docs/diffusers/index).
+
+![Stable Diffusion Inference endpoints](/static/blog/stable-diffusion-inference-endpoints/thubmnail.png)
+
+Before we can get started, make sure you meet all of the following requirements:
+
+1. An Organization/User with an active credit card. (Add billing [here](https://huggingface.co/settings/billing))
+2. You can access the UI at: [https://ui.endpoints.huggingface.co](https://ui.endpoints.huggingface.co/endpoints)
+
+The Tutorial will cover how to:
+
+1. [Deploy Stable Diffusion as an Inference Endpoint](#1-deploy-stable-diffusion-as-an-inference-endpoint)
+2. [Test & Generate Images with Stable Diffusion 2.0](#2-test--generate-images-with-stable-diffusion-20)
+3. [Integrate Stable Diffusion as API and send HTTP requests using Python](#3-integrate-stable-diffusion-as-api-and-send-http-requests-using-python)
+
+## What is Stable Diffusion?
+
+Stable Diffusion is a text-to-image latent diffusion model created by researchers and engineers from [CompVis](https://github.com/CompVis), [Stability AI](https://stability.ai/), and [LAION](https://laion.ai/). It is trained on 512x512 images from a subset of the [LAION-5B](https://laion.ai/blog/laion-5b/) database. LAION-5B is the largest, freely accessible multi-modal dataset that currently exists.
+
+This guide will not explain how the model works. If you are interested, you should check out the [Stable Diffusion with 🧨 Diffusers](https://huggingface.co/blog/stable_diffusion) blog post or [The Annotated Diffusion Model](https://huggingface.co/blog/annotated-diffusion)
+
+![stable-diffusion-architecture](/static/blog/stable-diffusion-inference-endpoints/stable-diffusion.png)
+
+## What are Hugging Face Inference Endpoints?
+
+[🤗 Inference Endpoints](https://huggingface.co/inference-endpoints) offers a secure production solution to easily deploy Machine Learning models on dedicated and autoscaling infrastructure managed by Hugging Face.
+
+A Hugging Face Inference Endpoint is built from a [Hugging Face Model Repository](https://huggingface.co/models). It supports all the [Transformers and Sentence-Transformers tasks as well as diffusers tasks](https://huggingface.co/docs/inference-endpoints/supported_tasks) and any arbitrary ML Framework through easy customization by adding a [custom inference handler.](https://huggingface.co/docs/inference-endpoints/guides/custom_handler) This [custom inference handler](https://huggingface.co/docs/inference-endpoints/guides/custom_handler) can be used to implement simple inference pipelines for ML Frameworks like Keras, Tensorflow, and sci-kit learn or to add custom business logic to your existing transformers pipeline.
+
+## 1. Deploy Stable Diffusion as an Inference Endpoint
+
+In this tutorial, you will learn how to deploy any Stable-Diffusion model from the [Hugging Face Hub](https://huggingface.co/models?other=stable-diffusion) to [Hugging Face Inference Endpoints](https://huggingface.co/inference-endpoints) and how to integrate it via an API into your products.
+
+You can access the UI of Inference Endpoints directly at: [https://ui.endpoints.huggingface.co/](https://ui.endpoints.huggingface.co/) or through the [Landingpage](https://huggingface.co/inference-endpoints).
+
+The first step is to deploy our model as an Inference Endpoint. Therefore we add the Hugging face repository Id of the Stable Diffusion model we want to deploy. In our case, it is `stabilityai/stable-diffusion-2`.
+
+![repository](/static/blog/stable-diffusion-inference-endpoints/repository.png)
+
+_Note: If the repository is not showing up in the search it might be gated, e.g. [runwayml/stable-diffusion-v1-5](https://huggingface.co/runwayml/stable-diffusion-v1-5). To deploy gated models you need to accept the terms on the model page. Additionally, it is currently only possible to deploy gated repositories from user accounts and not within organizations._
+
+Now, we can make changes to the provider, region, or instance we want to use as well as configure the security level of our endpoint. The easiest is to keep the suggested defaults from the application.
+
+![settings](/static/blog/stable-diffusion-inference-endpoints/settings.png)
+
+We can deploy our model by clicking on the “Create Endpoint” button. Once we click the “create” button, Inference Endpoints will create a dedicated container with the model and start our resources. After a few minutes, our endpoint is up and running.
+
+## 2. Test & Generate Images with Stable Diffusion 2.0
+
+Before integrating the endpoint and model into our applications, we can demo and test the model directly in the [UI](https://ui.endpoints.huggingface.co/endpoints). Each Inference Endpoint comes with an inference widget similar to the ones you know from the [Hugging Face Hub](https://huggingface.co/).
+
+We can provide a prompt for the image to be generated. Let's try `realistic render portrait of group of flying blue whales towards the moon, sci - fi, extremely detailed, digital painting`.
+
+![detail-page](/static/blog/stable-diffusion-inference-endpoints/detail-page.png)
+
+## 3. Integrate Stable Diffusion as API and send HTTP requests using Python
+
+Hugging Face Inference endpoints can directly work with binary data, meaning we can directly send our prompt and get an image in return. We are going to use **`requests`** to send our requests and use `PIL` to save the generated images to disk. (make your you have it installed **`pip install request Pillow`**)
+
+```python
+import json
+import requests as r
+from io import BytesIO
+from PIL import Image
+
+ENDPOINT_URL="" # url of your endpoint
+HF_TOKEN="" # token where you deployed your endpoint
+
+def generate_image(prompt:str):
+    payload = {"inputs": prompt}
+    headers = {
+        "Authorization": f"Bearer {HF_TOKEN}",
+        "Content-Type": "application/json",
+        "Accept": "image/png" # important to get an image back
+    }
+    response = r.post(ENDPOINT_URL, headers=headers, json=payload)
+    img = Image.open(BytesIO(response.content))
+
+    return img
+
+# define your prompt
+prompt = "realistic render portrait realistic render portrait of group of flying blue whales towards the moon, intricate, toy, sci - fi, extremely detailed, digital painting, sculpted in zbrush, artstation, concept art, smooth, sharp focus, illustration, chiaroscuro lighting, golden ratio, incredible art by artgerm and greg rutkowski and alphonse mucha and simon stalenhag"
+
+# generate image
+image = generate_image(prompt)
+
+# save to disk
+image.save("generation.png")
+
+```
+
+![generation](/static/blog/stable-diffusion-inference-endpoints/generation.png)
+
+We can also change the hyperparameter for the [Stable Diffusion pipeline](https://huggingface.co/docs/diffusers/api/pipelines/stable_diffusion#diffusers.StableDiffusionPipeline) by providing the parameters in the `parameters` attribute when sending requests, below is an example JSON payload on how to generate a `768x768` image.
+
+```json
+{
+  "inputs": "realistic render portrait realistic render portrait of group of flying blue whales towards the moon, intricate, toy, sci - fi, extremely detailed, digital painting, sculpted in zbrush, artstation, concept art, smooth, sharp focus, illustration, chiaroscuro lighting, golden ratio, incredible art by artgerm and greg rutkowski and alphonse mucha and simon stalenhag",
+  "parameters": {
+    "width": 768,
+    "height": 768,
+    "guidance_scale": 9
+  }
+}
+```
+
+---
+
+Now, its yoru time be creative and generate some amazing images with Stable Diffusion 2.0 on [Inference Endpoints](https://huggingface.co/inference-endpoints).
+
+Thanks for reading! If you have any questions, feel free to contact me on [Twitter](https://twitter.com/_philschmid) or [LinkedIn](https://www.linkedin.com/in/philipp-schmid-a6a2bb196/).
