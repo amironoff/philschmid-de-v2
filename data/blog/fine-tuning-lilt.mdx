@@ -17,7 +17,7 @@ In this post, you will learn how to fine-tune [LiLt](https://huggingface.co/docs
 This means you can use non-English RoBERTa checkpoints, e.g. [bertin-project/bertin-roberta-base-spanish](https://huggingface.co/bertin-project/bertin-roberta-base-spanish) for document understanding tasks. To convert a RoBERTa checkpoint to a LiLT checkpoint, you can follow [this guide](https://github.com/jpWang/LiLT#or-generate-your-own-checkpoint-optional).
 [LiLt](https://huggingface.co/docs/transformers/v4.24.0/en/model_doc/lilt#lilt) is released with a MIT license and is available on the [Hugging Face Hub](https://huggingface.co/models?other=lilt).
 
-In this example we will use the [FUNSD](https://guillaumejaume.github.io/FUNSD/) dataset — a collection of 199 fully annotated forms. More information about FUNSD can be found on its [GitHub page](https://guillaumejaume.github.io/FUNSD/).
+In this example, we will use the [FUNSD](https://guillaumejaume.github.io/FUNSD/) dataset — a collection of 199 fully annotated forms. More information about FUNSD can be found on its [GitHub page](https://guillaumejaume.github.io/FUNSD/).
 
 You will learn how to:
 
@@ -30,7 +30,7 @@ Before we start, make sure you have a [Hugging Face Account](https://huggingface
 
 ## Quick intro: LiLT Language-independent Layout Transformer
 
-LiLT is a language-independent Transformer model for document image understanding and information extraction. Put simply, you can use it to build a system that understands receipts and forms. LiLT can be pretrained on structured documents in one language and then directly fine-tuned on other languages with the corresponding off-the-shelf monolingual/multilingual pre-trained textual models.
+LiLT is a language-independent Transformer model for document image understanding and information extraction. Put simply, you can use it to build a system that understands receipts and forms. LiLT can be pre-trained on structured documents in one language and then directly fine-tuned on other languages with the corresponding off-the-shelf monolingual/multilingual pre-trained textual models.
 
 ![lilt](/static/blog/fine-tuning-lilt/lilt.png)
 
@@ -62,7 +62,7 @@ Additionally, we need to install an OCR-library to extract text from images. We 
 
 This example will use the [Hugging Face Hub](https://huggingface.co/models) as a remote model versioning service. To push our model to the Hub, you'll need to get a [Hugging Face account](https://huggingface.co/join).
 If you already have one, you can skip this step.
-Using your credentials and `notebook_login` util from the `huggingface_hub` package we will log into our account and store our token (access key) on the disk.
+Using your credentials and `notebook_login` util from the `huggingface_hub` package, we will log into our account and store our token (access key) on the disk.
 
 ```python
 from huggingface_hub import notebook_login
@@ -118,7 +118,7 @@ label2id = {k: v for v, k in enumerate(labels)}
 #    Available labels: ['O', 'B-HEADER', 'I-HEADER', 'B-QUESTION', 'I-QUESTION', 'B-ANSWER', 'I-ANSWER']
 ```
 
-To train our model we need to convert our inputs (text/image) to token IDs. This is done by a 🤗 Transformers `Tokenizer` and `PyTesseract`. If you are not sure what this means check out [chapter 6](https://huggingface.co/course/chapter6/1?fw=tf) of the Hugging Face Course.
+To train our model, we need to convert our inputs (text/image) to token IDs. This is done by a 🤗 Transformers `Tokenizer` and `PyTesseract`. If you are not sure what this means, check out [chapter 6](https://huggingface.co/course/chapter6/1?fw=tf) of the Hugging Face Course.
 
 _Note: The LiLT model doesn't have a `AutoProcessor` or `Tokenizer` to nicely create our input documents, but we can use the `LayoutLMv3Processor` or `LayoutLMv2Processor` instead._
 
@@ -134,8 +134,8 @@ tokenizer = AutoTokenizer.from_pretrained(model_id)
 processor = LayoutLMv3Processor(feature_extractor, tokenizer)
 ```
 
-Before we can process our dataset we need to define the `features` or the processed inputs, which are used for model training. `Features` class is a special dictionary that defines the internal structure of a dataset.
-Compared to traditional NLP datasets we need to add the `bbox` feature, which is a 2D array of the bounding boxes for each token.
+Before we can process our dataset, we need to define the `features` or the processed inputs, which are used for model training. `Features` class is a special dictionary that defines the internal structure of a dataset.
+Compared to traditional NLP datasets, we need to add the `bbox` feature, which is a 2D array of the bounding boxes for each token.
 
 ```python
 from PIL import Image
@@ -182,7 +182,7 @@ print(proc_dataset["train"].features.keys())
 
 ## 3. Fine-tune and evaluate LiLT
 
-Having processed our dataset, we can start training our model. We first need to load the [SCUT-DLVCLab/lilt-roberta-en-base](SCUT-DLVCLab/lilt-roberta-en-base) model, which is based on a English RoBERTa model with the `LiltForTokenClassification` class with the label mapping of our dataset.
+Having processed our dataset, we can start training our model. We first need to load the [SCUT-DLVCLab/lilt-roberta-en-base](SCUT-DLVCLab/lilt-roberta-en-base) model, which is based on English RoBERTa model with the `LiltForTokenClassification` class with the label mapping of our dataset.
 
 ```python
 from transformers import LiltForTokenClassification
@@ -226,7 +226,7 @@ def compute_metrics(p):
 
 ```
 
-The last step is to define the hyperparameters (`TrainingArguments`) we want to use for our training. We are leveraging the [Hugging Face Hub](https://huggingface.co/models) integration of the `Trainer` to automatically push our checkpoints, logs and metrics during training into a repository.
+The last step is to define the hyperparameters (`TrainingArguments`) we want to use for our training. We are leveraging the [Hugging Face Hub](https://huggingface.co/models) integration of the `Trainer` to automatically push our checkpoints, logs, and metrics during training into a repository.
 
 ```python
 from huggingface_hub import HfFolder
@@ -286,9 +286,9 @@ Nice, we have trained our model. 🎉 Lets evaluate the best model on the test s
 trainer.evaluate()
 ```
 
-The best score we achieved is an overall f1 score of `0.89`. For comparison `LayoutLM` (v1) achieves an overall f1 score of `0.79`. That's a `12.66%` improvement.
+The best score we achieved is an overall f1 score of `0.89`. For comparison, `LayoutLM` (v1) achieves an overall f1 score of `0.79`. That's a `12.66%` improvement.
 
-Lets save our results and processor to the Hugging Face Hub and create a model card.
+Let's save our results and processor to the Hugging Face Hub and create a model card.
 
 ```python
 # change apply_ocr to True to use the ocr text for inference
@@ -374,8 +374,8 @@ run_inference(dataset["test"][34]["image"])
 
 ## Conclusion
 
-We successfully fine-tuned our LiLT model to extract information from forms. With only `149` training examples we achieved an overall f1 score of `0.89`, which is `12.66%` better than the original `LayoutLM` model (`0.79`).
-Additionally, LiLT can easily be adapted to other languages, which makes it a great model for multilingual document understanding.
+We successfully fine-tuned our LiLT model to extract information from forms. With only `149` training examples, we achieved an overall f1 score of `0.89`, which is `12.66%` better than the original `LayoutLM` model (`0.79`).
+Additionally, LiLT can easily be adapted to other languages, making it a great model for multilingual document understanding.
 
 Now it's your time to integrate Transformers into your own projects. 🚀
 
